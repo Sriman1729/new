@@ -1,69 +1,71 @@
 // src/components/ChatbaseControls.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ChatbaseControls() {
   const [ready, setReady] = useState(false);
 
+  // Wait until Chatbase script finishes loading
   useEffect(() => {
-    // if the script is already there, skip adding again
-    let script = document.getElementById("chatbase-script");
-    if (!script) {
-      script = document.createElement("script");
-      script.src = "https://www.chatbase.co/embed.min.js";
-      script.id = "chatbase-script"; // unique ID
-      script.domain = "www.chatbase.co";
-      script.onload = () => {
-        // give Chatbase a moment to initialize
-        setTimeout(() => {
-          setReady(true);
-          // open automatically once ready (optional)
-          // window.chatbase && window.chatbase("open");
-        }, 800);
-      };
-      document.body.appendChild(script);
-    } else {
-      // already loaded; wait a bit then mark ready
-      setTimeout(() => setReady(true), 800);
-    }
-
-    // cleanup on unmount: close + remove iframe
-    return () => {
-      if (window.chatbase) {
-        // force close the chat
-        window.chatbase("close");
+    const check = setInterval(() => {
+      if (window.chatbase && typeof window.chatbase === "function") {
+        setReady(true);
+        clearInterval(check);
       }
-      const iframe = document.querySelector("iframe[src*='chatbase']");
-      if (iframe) iframe.remove();
-    };
+    }, 500);
+
+    return () => clearInterval(check);
   }, []);
 
-  const toggleChat = () => {
-    if (window.chatbase && ready) {
-      window.chatbase("toggle");
-    }
-  };
-
-  const closeChat = () => {
-    if (window.chatbase && ready) {
-      window.chatbase("close");
-    }
-  };
+  const openBot = () => ready && window.chatbase("open");
+  const closeBot = () => ready && window.chatbase("close");
+  const toggleBot = () => ready && window.chatbase("toggle");
 
   return (
-    <div className="fixed bottom-5 right-5 flex flex-col items-end gap-2">
+    <div
+      style={{
+        position: "fixed",
+        bottom: "20px",
+        left: "20px",
+        zIndex: 9999,
+        display: "flex",
+        gap: "8px",
+      }}
+    >
       <button
-        onClick={toggleChat}
-        disabled={!ready}
-        className="bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700 disabled:opacity-50"
+        onClick={openBot}
+        style={{
+          background: "#16a34a",
+          color: "white",
+          border: "none",
+          padding: "8px 12px",
+          borderRadius: "6px",
+        }}
       >
-        💬 Toggle Chat
+        Open Chat
       </button>
       <button
-        onClick={closeChat}
-        disabled={!ready}
-        className="bg-red-600 text-white px-4 py-2 rounded-full shadow hover:bg-red-700 disabled:opacity-50"
+        onClick={closeBot}
+        style={{
+          background: "#dc2626",
+          color: "white",
+          border: "none",
+          padding: "8px 12px",
+          borderRadius: "6px",
+        }}
       >
-        ✖ Close Chat
+        Close
+      </button>
+      <button
+        onClick={toggleBot}
+        style={{
+          background: "#2563eb",
+          color: "white",
+          border: "none",
+          padding: "8px 12px",
+          borderRadius: "6px",
+        }}
+      >
+        Toggle
       </button>
     </div>
   );
