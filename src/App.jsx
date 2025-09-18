@@ -15,7 +15,7 @@ import FertilizerCalculator from "./components/FertilizerCalculator";
 import PestAlerts from "./components/PestAlerts"; // 🐛 NEW
 import { DarkModeProvider } from "./context/DarkModeContext";
 import PageTransition from "./components/PageTransition";
-import ChatbaseControls from "./components/ChatbaseControls"; // 🔹 NEW
+import ChatbaseControls from "./components/ChatbaseControls"; // 🔹 Chatbase Controls
 
 function NotFound() {
   return (
@@ -157,7 +157,9 @@ export default function App() {
         </main>
 
         <Footer />
-        <ChatbaseControls /> {/* 🔹 Floating chat button/controls */}
+
+        {/* 🔹 Only show ChatbaseControls on /crop page */}
+        {location.pathname === "/crop" && <ChatbaseControls />}
       </div>
     </DarkModeProvider>
   );
