@@ -1,24 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ChatbaseControls() {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    // Load Chatbase script dynamically when this component mounts
-    const script = document.createElement("script");
-    script.src = "https://www.chatbase.co/embed.min.js";
-    script.id = "l5nRL-tkRCH-xVFi1Tz4r"; // your actual ID here
-    script.domain = "www.chatbase.co";
-    document.body.appendChild(script);
+    // Don’t add script if already present
+    if (!document.getElementById("chatbase-script")) {
+      const script = document.createElement("script");
+      script.src = "https://www.chatbase.co/embed.min.js";
+      script.id = "chatbase-script"; // unique id to avoid duplicates
+      script.domain = "www.chatbase.co";
+      script.onload = () => {
+        // mark ready after small delay to allow initialization
+        setTimeout(() => setReady(true), 500);
+      };
+      document.body.appendChild(script);
+    } else {
+      // script already present, just wait a bit
+      setTimeout(() => setReady(true), 500);
+    }
 
     return () => {
-      // Cleanup: remove script & widget when component unmounts
-      script.remove();
+      // Clean up iframe but keep script for faster reload
       const iframe = document.querySelector("iframe[src*='chatbase']");
       if (iframe) iframe.remove();
     };
   }, []);
 
   const toggleChat = () => {
-    if (window.chatbase) {
+    if (window.chatbase && ready) {
       window.chatbase("toggle");
     }
   };
@@ -26,7 +36,8 @@ export default function ChatbaseControls() {
   return (
     <button
       onClick={toggleChat}
-      className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700"
+      disabled={!ready}
+      className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700 disabled:opacity-50"
     >
       💬 Chat
     </button>
