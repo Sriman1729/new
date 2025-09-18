@@ -1,72 +1,34 @@
-// src/components/ChatbaseControls.jsx
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 export default function ChatbaseControls() {
-  const [ready, setReady] = useState(false);
-
-  // Wait until Chatbase script finishes loading
   useEffect(() => {
-    const check = setInterval(() => {
-      if (window.chatbase && typeof window.chatbase === "function") {
-        setReady(true);
-        clearInterval(check);
-      }
-    }, 500);
+    // Load Chatbase script dynamically when this component mounts
+    const script = document.createElement("script");
+    script.src = "https://www.chatbase.co/embed.min.js";
+    script.id = "l5nRL-tkRCH-xVFi1Tz4r"; // your actual ID here
+    script.domain = "www.chatbase.co";
+    document.body.appendChild(script);
 
-    return () => clearInterval(check);
+    return () => {
+      // Cleanup: remove script & widget when component unmounts
+      script.remove();
+      const iframe = document.querySelector("iframe[src*='chatbase']");
+      if (iframe) iframe.remove();
+    };
   }, []);
 
-  const openBot = () => ready && window.chatbase("open");
-  const closeBot = () => ready && window.chatbase("close");
-  const toggleBot = () => ready && window.chatbase("toggle");
+  const toggleChat = () => {
+    if (window.chatbase) {
+      window.chatbase("toggle");
+    }
+  };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        left: "20px",
-        zIndex: 9999,
-        display: "flex",
-        gap: "8px",
-      }}
+    <button
+      onClick={toggleChat}
+      className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded-full shadow hover:bg-green-700"
     >
-      <button
-        onClick={openBot}
-        style={{
-          background: "#16a34a",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "6px",
-        }}
-      >
-        Open Chat
-      </button>
-      <button
-        onClick={closeBot}
-        style={{
-          background: "#dc2626",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "6px",
-        }}
-      >
-        Close
-      </button>
-      <button
-        onClick={toggleBot}
-        style={{
-          background: "#2563eb",
-          color: "white",
-          border: "none",
-          padding: "8px 12px",
-          borderRadius: "6px",
-        }}
-      >
-        Toggle
-      </button>
-    </div>
+      💬 Chat
+    </button>
   );
 }
