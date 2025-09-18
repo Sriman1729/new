@@ -11,10 +11,11 @@ import PlantingCalendar from "./components/PlantingCalendar";
 import Resources from "./components/Resources";
 import Profile from "./components/Profile";
 import MarketInsights from "./components/MarketInsights";
-import FertilizerCalculator from "./components/FertilizerCalculator"; 
+import FertilizerCalculator from "./components/FertilizerCalculator";
 import PestAlerts from "./components/PestAlerts"; // 🐛 NEW
 import { DarkModeProvider } from "./context/DarkModeContext";
-import PageTransition from "./components/PageTransition"; 
+import PageTransition from "./components/PageTransition";
+import ChatbaseControls from "./components/ChatbaseControls"; // 🔹 NEW
 
 function NotFound() {
   return (
@@ -156,6 +157,7 @@ export default function App() {
         </main>
 
         <Footer />
+        <ChatbaseControls /> {/* 🔹 Floating chat button/controls */}
       </div>
     </DarkModeProvider>
   );
