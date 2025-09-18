@@ -1,25 +1,16 @@
-// src/components/ChatbaseControls.jsx
 import React, { useEffect } from "react";
 
 export default function ChatbaseControls() {
   useEffect(() => {
-    // create and inject the script
+    // Load Chatbase script dynamically when this component mounts
     const script = document.createElement("script");
     script.src = "https://www.chatbase.co/embed.min.js";
-    script.id = "l5nRL-tkRCH-xVFi1Tz4r"; // 🔹 use your Chatbase script ID here
+    script.id = "l5nRL-tkRCH-xVFi1Tz4r"; // your actual ID here
     script.domain = "www.chatbase.co";
     document.body.appendChild(script);
 
-    // optional auto-open after load
-    const openTimer = setTimeout(() => {
-      if (window.chatbase) {
-        window.chatbase("open");
-      }
-    }, 1500);
-
     return () => {
-      // cleanup when leaving the page
-      clearTimeout(openTimer);
+      // Cleanup: remove script & widget when component unmounts
       script.remove();
       const iframe = document.querySelector("iframe[src*='chatbase']");
       if (iframe) iframe.remove();
