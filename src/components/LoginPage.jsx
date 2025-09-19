@@ -1,7 +1,7 @@
 // src/components/LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Shield } from "lucide-react";
 
 export default function LoginPage() {
   const [passcode, setPasscode] = useState("");
@@ -24,7 +24,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-white dark:bg-gray-800 p-10 rounded-2xl shadow-2xl backdrop-blur-sm border border-white/20 flex flex-col items-center gap-6"
       >
-        <Lock className="w-12 h-12 text-green-600 mb-4 animate-bounce" />
+        <Shield className="w-12 h-12 text-green-600 mb-4 animate-bounce" />
         <h2 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 mb-6 text-center">
           Admin Login
         </h2>
