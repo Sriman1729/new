@@ -490,7 +490,6 @@ export default function EnhancedCropRecommendations() {
   );
   const isFormComplete = filledFilters === totalFilters;
 
-  // ✅ NEW: extra filter + sort states
   const [riskFilter, setRiskFilter] = useState("");
   const [waterFilter, setWaterFilter] = useState("");
   const [sortBy, setSortBy] = useState("");
@@ -506,7 +505,6 @@ export default function EnhancedCropRecommendations() {
     const fetchWeather = async () => {
       try {
         const apiKey = "5e04c9e9f749a242973926ba146c8772";
-        // <-- updated to include state for better geocoding resolution
         const url = `https://api.openweathermap.org/data/2.5/weather?q=${filters.district},${filters.state},IN&units=metric&appid=${apiKey}`;
         const response = await axios.get(url);
         setWeather(response.data);
@@ -538,7 +536,6 @@ export default function EnhancedCropRecommendations() {
   const handleGetRecommendations = () => {
     // Enhanced filtering logic
     let filtered = CROPS.filter(crop => 
-      // <-- updated: districtCrops contains crop NAMES, not ids
       districtCrops[filters.district]?.includes(crop.name)
     );
     
@@ -600,13 +597,11 @@ export default function EnhancedCropRecommendations() {
     setRecommendations([]);
     setHasSearched(false);
     setWeather(null);
-    // also reset new filters
     setRiskFilter("");
     setWaterFilter("");
     setSortBy("");
   };
 
-  // ✅ NEW: filter + sort logic for displayed recommendations (memoized)
   const displayed = useMemo(() => {
     let d = [...recommendations];
     if (riskFilter) {
@@ -714,7 +709,6 @@ export default function EnhancedCropRecommendations() {
           placeholder="Select Duration"
         />
 
-        {/* ✅ Correct investmentBudget filter (kept only once) */}
         <div className="sm:col-span-2">
           <FilterSelect 
             name="investmentBudget" 
@@ -793,7 +787,6 @@ export default function EnhancedCropRecommendations() {
       <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Enhanced AI Results</h2>
     </div>
     
-    {/* ✅ NEW Filter controls above results (styled to match FilterSelect) */}
     {hasSearched && recommendations.length > 0 && (
       <div className="flex flex-wrap gap-4 mb-6 items-center">
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-green-900 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
