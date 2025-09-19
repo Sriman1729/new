@@ -11,13 +11,11 @@ const loadGoogleTranslate = () => {
       resolve();
       return;
     }
-
     const existingScript = document.getElementById("google-translate-script");
     if (existingScript) {
       existingScript.addEventListener("load", resolve);
       return;
     }
-
     const s = document.createElement("script");
     s.id = "google-translate-script";
     s.src =
@@ -81,7 +79,6 @@ export default function Header() {
     ],
   };
 
-  // Load Google Translate once
   useEffect(() => {
     window.googleTranslateElementInit = () => {
       new window.google.translate.TranslateElement(
@@ -93,8 +90,6 @@ export default function Header() {
     loadGoogleTranslate().then(() => {
       if (window.google && window.google.translate) {
         window.googleTranslateElementInit();
-
-        // 🔹 Restore last chosen language from cookie
         const savedLang = getCookie("googtrans")?.split("/").pop();
         if (savedLang && savedLang !== "en") {
           setTimeout(() => handleTranslate(savedLang), 600);
@@ -103,18 +98,15 @@ export default function Header() {
     });
   }, []);
 
-  // Observe banner (to shift UI down)
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const banner = document.querySelector(".goog-te-banner-frame");
       setBannerActive(!!banner);
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, []);
 
-  // ✅ Cookie helpers
   const setCookie = (name, value, days, domain) => {
     let expires = "";
     if (days) {
@@ -138,7 +130,6 @@ export default function Header() {
     return null;
   };
 
-  // ✅ Updated handleTranslate
   const handleTranslate = (lang) => {
     const combo = document.querySelector(".goog-te-combo");
     if (combo) {
@@ -148,10 +139,7 @@ export default function Header() {
       setShowLang(false);
       return;
     }
-
-    // fallback
-    const cookieVal = `/en/${lang}`;
-    setCookie("googtrans", cookieVal, 365);
+    setCookie("googtrans", `/en/${lang}`, 365);
     setTimeout(() => {
       window.location.reload();
     }, 200);
@@ -165,7 +153,7 @@ export default function Header() {
         style={{ paddingTop: bannerActive ? "40px" : "0px" }}
         className="transition-all duration-500 ease-in-out"
       >
-        <header className="sticky top-0 z-50 backdrop-blur-sm bg-green-50/90 dark:bg-green-900/90 text-green-900 dark:text-green-200 shadow-sm border-b border-green-200/50 dark:border-green-700/50 transition-all duration-500">
+        <header className="sticky top-0 z-50 backdrop-blur-sm bg-gray-50/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-200 shadow-sm border-b border-gray-200/50 dark:border-gray-700/50 transition-all duration-500">
           <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
             {/* Brand */}
             <Link to="/" className="flex items-center gap-2 group">
@@ -187,7 +175,7 @@ export default function Header() {
                       ${
                         isActive
                           ? "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 font-semibold"
-                          : "hover:text-green-600"
+                          : "hover:text-green-600 dark:hover:text-green-400"
                       }`}
                   >
                     {link.name}
@@ -213,18 +201,18 @@ export default function Header() {
 
                 {showLang && (
                   <div
-                    className="absolute right-0 mt-2 w-64 bg-green-50 dark:bg-green-900 
-                    rounded-xl shadow-lg z-50 overflow-hidden border border-green-200 dark:border-green-700
+                    className="absolute right-0 mt-2 w-64 bg-gray-50 dark:bg-gray-900 
+                    rounded-xl shadow-lg z-50 overflow-hidden border border-gray-200 dark:border-gray-700
                     max-h-80 overflow-y-auto"
                   >
                     {/* Search Bar */}
-                    <div className="p-2 sticky top-0 bg-green-50 dark:bg-green-900 border-b border-green-200 dark:border-green-700">
+                    <div className="p-2 sticky top-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                       <input
                         type="text"
                         placeholder="Search language…"
                         value={searchLang}
                         onChange={(e) => setSearchLang(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-md border border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                       />
                     </div>
 
@@ -262,16 +250,16 @@ export default function Header() {
                 )}
               </div>
 
-              {/* ✅ Theme Toggle (improved contrast + glow) */}
+              {/* Theme Toggle */}
               <button
                 onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-full bg-green-200 hover:bg-green-300 dark:bg-green-800 dark:hover:bg-green-700 transition ring-1 ring-green-300/50 hover:ring-green-500/60"
+                className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition ring-1 ring-gray-300/50 hover:ring-gray-500/60"
                 aria-label="Toggle theme"
               >
                 {darkMode ? (
                   <Sun className="w-5 h-5 text-yellow-400" />
                 ) : (
-                  <Moon className="w-5 h-5 text-green-600" />
+                  <Moon className="w-5 h-5 text-gray-600" />
                 )}
               </button>
 
@@ -282,7 +270,7 @@ export default function Header() {
                   ${
                     location.pathname === "/profile"
                       ? "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 ring-2 ring-green-500/40"
-                      : "bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700"
+                      : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
                   }`}
               >
                 <Sprout className="w-4 h-4 text-green-600" />
@@ -292,13 +280,13 @@ export default function Header() {
               {/* Mobile Menu */}
               <button
                 onClick={() => setMobileMenu((s) => !s)}
-                className="md:hidden p-2 rounded-full bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 transition"
+                className="md:hidden p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
                 aria-label="Toggle menu"
               >
                 {mobileMenu ? (
-                  <X className="w-6 h-6 text-green-700 dark:text-green-200" />
+                  <X className="w-6 h-6 text-gray-700 dark:text-gray-200" />
                 ) : (
-                  <Menu className="w-6 h-6 text-green-700 dark:text-green-200" />
+                  <Menu className="w-6 h-6 text-gray-700 dark:text-gray-200" />
                 )}
               </button>
             </div>
@@ -306,7 +294,7 @@ export default function Header() {
 
           {/* Mobile Nav */}
           {mobileMenu && (
-            <div className="md:hidden bg-green-50 dark:bg-green-900 px-4 py-3 border-t border-green-200 dark:border-green-700">
+            <div className="md:hidden bg-gray-50 dark:bg-gray-900 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.to;
                 return (
@@ -318,7 +306,7 @@ export default function Header() {
                       ${
                         isActive
                           ? "bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 font-semibold"
-                          : "hover:bg-green-200 dark:hover:bg-green-700"
+                          : "hover:bg-gray-200 dark:hover:bg-gray-700"
                       }`}
                   >
                     {link.name}
