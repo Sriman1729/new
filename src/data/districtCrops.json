@@ -331,7 +331,7 @@
     "Guna": ["Wheat", "Gram (Chickpea)", "Soybean", "Coriander", "Mustard", "Sorghum (Jowar)", "Lentil (Masur)", "Maize"],
     "Gwalior": ["Wheat", "Mustard", "Sorghum (Jowar)", "Rice (Paddy)", "Gram (Chickpea)", "Potato", "Guava", "Tomato", "Berseem"],
     "Harda": ["Soybean", "Wheat", "Gram (Chickpea)", "Maize", "Pigeon Pea (Arhar)", "Moong Bean", "Lentil (Masur)"],
-    "Hoshangabad (Narmadapuram)": ["Wheat", "Soybean", "Gram (Chickpea)", "Pigeon Pea (Arhar)", "Sugarcane", "Moong Bean", "Guava", "Mango"],
+    "Hoshangabad": ["Wheat", "Soybean", "Gram (Chickpea)", "Pigeon Pea (Arhar)", "Sugarcane", "Moong Bean", "Guava", "Mango"],
     "Indore": ["Soybean", "Wheat", "Potato", "Onion", "Garlic", "Gram (Chickpea)", "Pomegranate", "Guava", "Marigold", "Rose"],
     "Jabalpur": ["Wheat", "Gram (Chickpea)", "Rice (Paddy)", "Peas", "Soybean", "Lentil (Masur)", "Sugarcane", "Mango", "Guava", "Tomato"],
     "Jhabua": ["Maize", "Cotton", "Soybean", "Gram (Chickpea)", "Black Gram (Urad)", "Pigeon Pea (Arhar)", "Tomato", "Chilli"],
@@ -737,4 +737,5 @@
     "Daman": ["Rice (Paddy)", "Pearl Millet (Bajra)", "Banana", "Papaya", "Mango", "Okra (Bhindi)", "Brinjal (Eggplant)", "Cucumber"],
     "Diu": ["Pearl Millet (Bajra)", "Sorghum (Jowar)", "Groundnut", "Wheat", "Mango", "Papaya", "Pomegranate", "Onion", "Garlic"]
 }
+
 
