@@ -15,9 +15,9 @@ import {
   Cloud,
   Snowflake,
 } from "lucide-react";
-import indiaDistricts from "../data/indiaDistricts.json";
+import indiaDistricts from "../data/indiaDistricts.json"; // adjust path
 
-// --- Helper: Farming Advice ---
+// --- Helper Functions ---
 const getFarmingAdvice = (weather) => {
   if (!weather) return [];
   const temp = weather.main.temp;
@@ -26,35 +26,22 @@ const getFarmingAdvice = (weather) => {
   const advice = [];
 
   if (temp >= 20 && temp <= 30 && humidity >= 50 && humidity <= 70)
-    advice.push(
-      "🌾 Ideal conditions for wheat sowing. Plan for October-November planting."
-    );
+    advice.push("Ideal for wheat sowing.");
   if (temp >= 25 && temp <= 35 && condition.includes("clear"))
-    advice.push("🌱 Good for paddy transplanting. Ensure adequate water supply.");
-  if (condition.includes("rain")) {
-    advice.push("🌧️ Monsoon rains detected. Ideal for kharif sowing and land preparation.");
-    advice.push("💧 Reduce irrigation schedule. Monitor for water logging in paddy fields.");
-  }
-  if (temp > 35) {
-    advice.push("🔥 High temperature alert. Provide shade to livestock and increase irrigation.");
-    advice.push("🌴 Consider heat-resistant varieties for cotton and sugarcane crops.");
-  }
-  if (humidity > 80) {
-    advice.push("🍚 High humidity may cause blast in paddy. Apply preventive fungicide spray.");
-    advice.push("🌾 Monitor wheat crops for rust diseases during this weather.");
-  }
-  if (temp < 15) {
-    advice.push("❄️ Cold wave conditions. Protect sugarcane and citrus crops from frost damage.");
-  }
-  if (advice.length === 0)
-    advice.push("✅ Conditions are normal. Continue with routine farm activities.");
+    advice.push("Good for paddy transplanting.");
+  if (condition.includes("rain")) advice.push("Rainy – reduce irrigation.");
+  if (temp > 35) advice.push("High temp – provide shade & irrigation.");
+  if (humidity > 80) advice.push("High humidity – monitor for fungal diseases.");
+  if (temp < 15) advice.push("Cold wave – protect crops from frost.");
+  if (advice.length === 0) advice.push("Normal conditions today.");
+
   return advice;
 };
 
-// --- Helper: Alerts ---
 const generateFarmingAlerts = (current, forecast) => {
   const newAlerts = [];
   if (!current || !forecast) return [];
+
   const temp = current.main.temp;
   const humidity = current.main.humidity;
   const windSpeed = current.wind.speed;
@@ -63,49 +50,45 @@ const generateFarmingAlerts = (current, forecast) => {
     newAlerts.push({
       type: "warning",
       icon: <Thermometer />,
-      title: "Extreme Heat Alert",
-      message:
-        "Extreme heat may damage wheat in grain filling stage. Provide emergency irrigation.",
+      title: "Extreme Heat",
+      message: "Provide emergency irrigation.",
     });
   else if (temp < 5)
     newAlerts.push({
       type: "warning",
       icon: <Snowflake />,
       title: "Frost Alert",
-      message: "Frost warning. Protect potato, sugarcane and citrus crops immediately.",
+      message: "Protect potato and citrus crops.",
     });
   if (humidity > 85)
     newAlerts.push({
       type: "warning",
       icon: <Droplet />,
-      title: "Disease Risk Alert",
-      message: "High humidity increases blast risk in paddy and rust in wheat.",
+      title: "Disease Risk",
+      message: "High humidity favors fungal infections.",
     });
   if (windSpeed > 15)
     newAlerts.push({
       type: "warning",
       icon: <Wind />,
-      title: "Strong Wind Alert",
-      message: "Strong winds may cause lodging in wheat and paddy crops.",
+      title: "Strong Winds",
+      message: "May cause lodging in wheat/paddy.",
     });
 
   const rainForecast = forecast.list
     .slice(0, 8)
-    .some((item) =>
-      item.weather[0].main.toLowerCase().includes("rain")
-    );
+    .some((item) => item.weather[0].main.toLowerCase().includes("rain"));
   if (rainForecast)
     newAlerts.push({
       type: "info",
       icon: <CloudRain />,
-      title: "Monsoon Update",
-      message: "Rain expected in 24 hours. Good for kharif sowing. Postpone harvesting.",
+      title: "Rain Expected",
+      message: "Good for kharif sowing. Delay harvesting.",
     });
 
   return newAlerts;
 };
 
-// --- Icons Map ---
 const weatherIcons = {
   Clear: <Sun className="text-yellow-500" />,
   Clouds: <Cloud className="text-gray-500" />,
@@ -116,16 +99,21 @@ const weatherIcons = {
   Mist: <Cloud className="text-gray-400" />,
   Fog: <Cloud className="text-gray-400" />,
 };
-
 const getWeatherIcon = (condition) =>
   weatherIcons[condition] || <Sun className="text-yellow-400" />;
 const getDayName = (timestamp) =>
   new Date(timestamp * 1000).toLocaleDateString("en-US", { weekday: "short" });
 
-// =================== Main Component ===================
+// --- Main Component ---
 export default function WeatherDashboard() {
-  const [location, setLocation] = useState({ state: "Telangana", city: "Hyderabad" });
-  const [weatherData, setWeatherData] = useState({ current: null, forecast: null });
+  const [location, setLocation] = useState({
+    state: "Telangana",
+    city: "Hyderabad",
+  });
+  const [weatherData, setWeatherData] = useState({
+    current: null,
+    forecast: null,
+  });
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
@@ -146,7 +134,7 @@ export default function WeatherDashboard() {
     setError("");
     setStatus("loading");
     try {
-      const apiKey = "f438baf46e45d28234c799897dc72268";
+      const apiKey = "f438baf46e45d28234c799897dc72268"; // replace with env
       const [currentResponse, forecastResponse] = await Promise.all([
         axios.get(
           `https://api.openweathermap.org/data/2.5/weather?q=${cityName},IN&units=metric&appid=${apiKey}`
@@ -161,7 +149,7 @@ export default function WeatherDashboard() {
       });
       setStatus("success");
     } catch (err) {
-      setError("Unable to fetch weather data. Please check the location or your API key.");
+      setError("Unable to fetch weather data.");
       setWeatherData({ current: null, forecast: null });
       setStatus("error");
     }
@@ -170,10 +158,6 @@ export default function WeatherDashboard() {
   useEffect(() => {
     fetchWeatherData(location.city);
   }, [fetchWeatherData]);
-
-  const handleLocationSubmit = () => {
-    fetchWeatherData(location.city);
-  };
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -189,7 +173,7 @@ export default function WeatherDashboard() {
       <LocationSelector
         location={location}
         setLocation={setLocation}
-        onSubmit={handleLocationSubmit}
+        onSubmit={() => fetchWeatherData(location.city)}
         isLoading={status === "loading"}
       />
 
@@ -207,11 +191,11 @@ export default function WeatherDashboard() {
           <div className="lg:col-span-2 flex flex-col gap-6">
             <CurrentWeatherCard weather={weatherData.current} state={location.state} />
             {weatherData.forecast && <ForecastPanel forecast={weatherData.forecast} />}
-            <SoilMoistureBar /> {/* 🌱 Added soil moisture */}
           </div>
           <aside className="flex flex-col gap-6">
             {farmingAlerts.length > 0 && <AlertsPanel alerts={farmingAlerts} />}
             <FarmingTipsPanel tips={farmingAdvice} />
+            <SoilMoistureBar /> {/* 🌱 moved here */}
           </aside>
         </div>
       )}
@@ -219,34 +203,29 @@ export default function WeatherDashboard() {
   );
 }
 
-// =================== Sub Components ===================
-
-// Location Selector
+// --- Subcomponents ---
 const LocationSelector = ({ location, setLocation, onSubmit, isLoading }) => {
   const states = Object.keys(indiaDistricts);
   const districts = indiaDistricts[location.state] || [];
 
-  const handleStateChange = (e) => {
-    const newState = e.target.value;
-    const firstCity = indiaDistricts[newState]?.[0];
-    setLocation({ state: newState, city: firstCity || "" });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit();
-  };
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
         className="flex flex-col md:flex-row gap-4 items-center"
       >
         <select
           value={location.state}
-          onChange={handleStateChange}
-          className="w-full md:w-1/3 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 transition"
+          onChange={(e) =>
+            setLocation({
+              state: e.target.value,
+              city: indiaDistricts[e.target.value]?.[0] || "",
+            })
+          }
+          className="w-full md:w-1/3 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200"
         >
           {states.map((st) => (
             <option key={st} value={st}>
@@ -256,21 +235,19 @@ const LocationSelector = ({ location, setLocation, onSubmit, isLoading }) => {
         </select>
         <select
           value={location.city}
-          onChange={(e) =>
-            setLocation((prev) => ({ ...prev, city: e.target.value }))
-          }
-          className="w-full md:w-1/3 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 transition"
+          onChange={(e) => setLocation((prev) => ({ ...prev, city: e.target.value }))}
+          className="w-full md:w-1/3 border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200"
         >
-          {districts.map((district) => (
-            <option key={district} value={district}>
-              {district}
+          {districts.map((d) => (
+            <option key={d} value={d}>
+              {d}
             </option>
           ))}
         </select>
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full md:w-auto flex-grow bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition disabled:opacity-50"
         >
           {isLoading ? "Loading..." : "Get Weather"}
         </button>
@@ -279,7 +256,6 @@ const LocationSelector = ({ location, setLocation, onSubmit, isLoading }) => {
   );
 };
 
-// Current Weather Card
 const CurrentWeatherCard = ({ weather, state }) => {
   const icon = getWeatherIcon(weather.weather[0].main);
   return (
@@ -304,32 +280,32 @@ const CurrentWeatherCard = ({ weather, state }) => {
           <div className="text-5xl font-bold text-gray-800 dark:text-gray-100">
             {Math.round(weather.main.temp)}°C
           </div>
-          <div className="font-semibold capitalize text-gray-600 dark:text-gray-300">
+          <div className="capitalize text-gray-600 dark:text-gray-300">
             {weather.weather[0].description}
           </div>
         </div>
         <div className="text-sm space-y-2 text-gray-600 dark:text-gray-300">
           <div className="flex items-center gap-2">
-            <Thermometer size={16} /> Feels like {Math.round(weather.main.feels_like)}°C
+            <Thermometer size={16} /> Feels {Math.round(weather.main.feels_like)}°C
           </div>
           <div className="flex items-center gap-2">
-            <Droplet size={16} /> Humidity: {weather.main.humidity}%
+            <Droplet size={16} /> Humidity {weather.main.humidity}%
           </div>
           <div className="flex items-center gap-2">
-            <Wind size={16} /> Wind: {weather.wind.speed.toFixed(1)} m/s
+            <Wind size={16} /> Wind {weather.wind.speed.toFixed(1)} m/s
           </div>
         </div>
       </div>
       <div className="flex justify-between text-sm mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
         <div className="flex items-center gap-2">
-          <Sunrise size={20} /> Sunrise:{" "}
+          <Sunrise size={20} />{" "}
           {new Date(weather.sys.sunrise * 1000).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </div>
         <div className="flex items-center gap-2">
-          <Sunset size={20} /> Sunset:{" "}
+          <Sunset size={20} />{" "}
           {new Date(weather.sys.sunset * 1000).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -340,7 +316,6 @@ const CurrentWeatherCard = ({ weather, state }) => {
   );
 };
 
-// Forecast Panel with tips
 const ForecastPanel = ({ forecast }) => {
   const dailyForecast = forecast.list.filter((_, i) => i % 8 === 0).slice(0, 5);
 
@@ -349,37 +324,33 @@ const ForecastPanel = ({ forecast }) => {
       <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">
         📅 5-Day Forecast
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {dailyForecast.map((day, index) => {
           const tips = getFarmingAdvice({
             main: { temp: day.main.temp, humidity: day.main.humidity },
             weather: [{ main: day.weather[0].main }],
           });
-
           return (
             <div
               key={index}
-              className="p-4 rounded-lg bg-gray-100 dark:bg-gray-700 flex flex-col items-center text-center"
+              className="p-3 rounded-lg bg-gray-100 dark:bg-gray-700 flex flex-col items-center text-center"
             >
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+              <div className="font-semibold text-sm">
                 {getDayName(day.dt)}
               </div>
-              <div className="text-4xl my-2">
+              <div className="text-3xl my-2">
                 {getWeatherIcon(day.weather[0].main)}
               </div>
-              <div className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              <div className="text-lg font-bold">
                 {Math.round(day.main.temp)}°
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              <div className="text-xs capitalize text-gray-500 dark:text-gray-400">
                 {day.weather[0].description}
               </div>
-
-              {/* 🌱 Farming Tips (multiple) */}
-              <ul className="mt-3 text-xs text-left text-green-700 dark:text-green-300 space-y-1">
-                {tips.map((tip, i) => (
-                  <li key={i}>• {tip}</li>
-                ))}
-              </ul>
+              {/* 🌱 One Tip */}
+              <div className="mt-2 text-xs italic text-green-700 dark:text-green-300">
+                {tips[0]}
+              </div>
             </div>
           );
         })}
@@ -388,31 +359,26 @@ const ForecastPanel = ({ forecast }) => {
   );
 };
 
-// Alerts Panel
 const AlertsPanel = ({ alerts }) => (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-    <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
       <Siren /> Farming Alerts
     </h3>
     <div className="space-y-3">
-      {alerts.map((alert, index) => (
+      {alerts.map((a, i) => (
         <div
-          key={index}
+          key={i}
           className={`p-3 rounded-lg border-l-4 ${
-            alert.type === "warning"
+            a.type === "warning"
               ? "bg-yellow-50 dark:bg-yellow-900/40 border-yellow-400"
               : "bg-blue-50 dark:bg-blue-900/40 border-blue-400"
           }`}
         >
           <div className="flex items-start gap-3">
-            <span className="text-xl mt-1">{alert.icon}</span>
+            <span className="text-xl">{a.icon}</span>
             <div>
-              <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-                {alert.title}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-300">
-                {alert.message}
-              </div>
+              <div className="font-semibold text-sm">{a.title}</div>
+              <div className="text-xs">{a.message}</div>
             </div>
           </div>
         </div>
@@ -421,22 +387,18 @@ const AlertsPanel = ({ alerts }) => (
   </div>
 );
 
-// Farming Tips Panel
 const FarmingTipsPanel = ({ tips }) => (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-    <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
       <Leaf /> Farming Tips
     </h3>
-    <ul className="space-y-3">
-      {tips.map((tip, index) => (
+    <ul>
+      {tips.slice(0, 1).map((tip, i) => (
         <li
-          key={index}
+          key={i}
           className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300"
         >
-          <Wheat
-            size={16}
-            className="text-green-600 mt-1 flex-shrink-0"
-          />
+          <Wheat size={16} className="text-green-600 mt-1" />
           <span>{tip}</span>
         </li>
       ))}
@@ -444,27 +406,19 @@ const FarmingTipsPanel = ({ tips }) => (
   </div>
 );
 
-// Soil Moisture Bar
 const SoilMoistureBar = () => {
-  const [moisture, setMoisture] = useState(65);
-
+  const [moisture, setMoisture] = useState(55);
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMoisture((prev) => {
-        let newValue = prev + (Math.random() * 10 - 5);
-        if (newValue > 100) newValue = 100;
-        if (newValue < 0) newValue = 0;
-        return Math.round(newValue);
-      });
-    }, 5000);
-    return () => clearInterval(interval);
+    const id = setInterval(
+      () => setMoisture((m) => Math.max(20, Math.min(90, m + (Math.random() * 10 - 5)))),
+      5000
+    );
+    return () => clearInterval(id);
   }, []);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">
-        🌱 Soil Moisture
-      </h3>
+      <h3 className="text-xl font-bold mb-4">🌱 Soil Moisture</h3>
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
         <div
           className={`h-4 rounded-full transition-all ${
@@ -477,14 +431,11 @@ const SoilMoistureBar = () => {
           style={{ width: `${moisture}%` }}
         ></div>
       </div>
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-        Current soil moisture: <b>{moisture}%</b>
-      </p>
+      <p className="mt-2 text-sm">Current soil moisture: <b>{moisture}%</b></p>
     </div>
   );
 };
 
-// Skeleton Loader
 const WeatherSkeleton = () => (
   <div className="animate-pulse space-y-6 mt-6">
     <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
