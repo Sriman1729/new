@@ -236,7 +236,7 @@ export default function Home() {
               Crop Advisory
             </Link>
             <Link
-              to="/admin"
+              to="/login"
               className="bg-green-800/90 text-white dark:bg-green-700 dark:hover:bg-green-800 px-6 py-3 rounded-lg font-semibold shadow transition"
             >
               Admin Login
