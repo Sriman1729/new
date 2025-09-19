@@ -11,11 +11,12 @@ import PlantingCalendar from "./components/PlantingCalendar";
 import Resources from "./components/Resources";
 import Profile from "./components/Profile";
 import MarketInsights from "./components/MarketInsights";
-import FertilizerCalculator from "./components/FertilizerCalculator";
-import PestAlerts from "./components/PestAlerts"; // 🐛 NEW
+import FertilizerCalculator from "./components/FertilizerCalculator"; 
+import PestAlerts from "./components/PestAlerts"; 
+import Admin from "./components/Admin"; // ✅ NEW
+
 import { DarkModeProvider } from "./context/DarkModeContext";
-import PageTransition from "./components/PageTransition";
-import ChatbaseControls from "./components/ChatbaseControls"; // 🔹 NEW
+import PageTransition from "./components/PageTransition"; 
 
 function NotFound() {
   return (
@@ -78,6 +79,16 @@ export default function App() {
                   </PageTransition>
                 }
               />
+
+              <Route
+                path="/admin" // ✅ NEW ROUTE
+                element={
+                  <PageTransition type="fade">
+                    <Admin />
+                  </PageTransition>
+                }
+              />
+
               <Route
                 path="/crop"
                 element={
@@ -135,7 +146,7 @@ export default function App() {
                 }
               />
               <Route
-                path="/alerts" // 🐛 NEW ROUTE
+                path="/alerts"
                 element={
                   <PageTransition type="fade">
                     <PestAlerts />
@@ -157,7 +168,6 @@ export default function App() {
         </main>
 
         <Footer />
-        <ChatbaseControls /> {/* 🔹 Floating chat button/controls */}
       </div>
     </DarkModeProvider>
   );
