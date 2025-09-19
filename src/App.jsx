@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -13,7 +14,9 @@ import Profile from "./components/Profile";
 import MarketInsights from "./components/MarketInsights";
 import FertilizerCalculator from "./components/FertilizerCalculator"; 
 import PestAlerts from "./components/PestAlerts"; 
-import Admin from "./components/Admin"; // ✅ NEW
+import Admin from "./components/Admin"; 
+import LoginPage from "./components/LoginPage"; // ✅ Login page
+import ProtectedRoute from "./components/ProtectedRoute"; // ✅ Protected route
 
 import { DarkModeProvider } from "./context/DarkModeContext";
 import PageTransition from "./components/PageTransition"; 
@@ -80,12 +83,25 @@ export default function App() {
                 }
               />
 
+              {/* Login page */}
               <Route
-                path="/admin" // ✅ NEW ROUTE
+                path="/login"
                 element={
                   <PageTransition type="fade">
-                    <Admin />
+                    <LoginPage />
                   </PageTransition>
+                }
+              />
+
+              {/* Protected Admin page */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <PageTransition type="fade">
+                      <Admin />
+                    </PageTransition>
+                  </ProtectedRoute>
                 }
               />
 
