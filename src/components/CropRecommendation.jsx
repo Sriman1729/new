@@ -96,8 +96,8 @@ if (previousFamilies[2] && previousFamilies[2] === candidateFamily) {
 // --- UI COMPONENTS ---
 const FilterSelect = ({ name, label, value, onChange, options, placeholder }) => (
   <div>
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{label}</label>
+    <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
       <option value="">{placeholder}</option>
       {options.map(option => (
         <option key={option.value || option} value={option.value || option}>{option.label || option}</option>
@@ -110,7 +110,7 @@ const WaterSourceCheckboxes = ({ selected, onChange }) => {
   const sources = ["Rainwater", "Borewell/Tubewell", "Canal Irrigation", "Pond/Well"];
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">Available Water Sources</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Available Water Sources</label>
       <div className="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-2">
         {sources.map(s => (
           <label key={s} className="flex items-center space-x-2 text-sm text-gray-600">
@@ -153,8 +153,8 @@ const AIInsightPanel = ({ filters, resultsCount, season }) => (
 
 const CropDetailModal = ({ crop, onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
-    <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-      <div className="sticky top-0 bg-white p-5 border-b flex justify-between items-center">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="sticky top-0 bg-white dark:bg-gray-800 p-5 border-b flex justify-between items-center">
         <div className="flex items-center gap-3">
           <span className="text-4xl">{crop.icon}</span>
           <div>
@@ -285,7 +285,7 @@ const CropRecommendationCard = ({ crop, rank, onViewDetails }) => {
   const exportColor = crop.exportPotential === 'Very High' ? 'text-purple-600 bg-purple-100' : crop.exportPotential === 'High' ? 'text-indigo-600 bg-indigo-100' : 'text-gray-600 bg-gray-100';
   
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col relative">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col relative">
       <div className="p-5 flex-grow">
         <div className="flex items-center gap-4 mb-3">
           <span className="text-5xl">{crop.icon}</span>
@@ -309,7 +309,7 @@ const CropRecommendationCard = ({ crop, rank, onViewDetails }) => {
           </div>
         </div>
         <div className="bg-gray-50 rounded-md p-3 mb-4">
-          <h4 className="font-semibold text-sm mb-2 text-gray-700">Weather Forecast</h4>
+          <h4 className="font-semibold text-sm mb-2 text-gray-700 dark:text-gray-200">Weather Forecast</h4>
           <div className="flex justify-between items-center text-xs text-gray-600 mb-2"><strong>Planting:</strong><span>{crop.plantingWeather.avg}</span></div>
           <div className="flex justify-between items-center text-xs text-gray-600"><strong>Harvest:</strong><span>{crop.harvestWeather.avg}</span></div>
         </div>
@@ -462,7 +462,7 @@ export default function EnhancedCropRecommendations() {
         </header>
         
        <main>
-        <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FilterSelect name="state" label="State" value={filters.state} onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, district: "" }))} options={Object.keys(DISTRICTS)} placeholder="Select State"/>
@@ -498,7 +498,7 @@ export default function EnhancedCropRecommendations() {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="w-full md:w-1/2">
-                <p className="text-sm font-medium text-gray-700 mb-1">Recommendation Progress</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Recommendation Progress</p>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${(filledFilters/totalFilters)*100}%` }}></div>
                 </div>
@@ -526,34 +526,34 @@ export default function EnhancedCropRecommendations() {
             
             {hasSearched && recommendations.length > 0 && (
               <div className="flex flex-wrap gap-4 mb-6 items-center">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">Sort By</option>
                   <option value="risk">Risk (Low → High)</option>
                   <option value="water">Water (Low → High)</option>
                   <option value="profit">Profit (High → Low)</option>
                   <option value="smartScore">Smart Score (High → Low)</option>
                 </select>
-                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">All Risk Levels</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
-                <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">All Water Efficiency</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                   <option value="Very High">Very High</option>
                 </select>
-                <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-200">Reset Filters</button>
+                <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 rounded-md border border-gray-200 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200">Reset Filters</button>
               </div>
             )}
 
             {!hasSearched ? (
-              <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md border-2 border-dashed border-gray-200">
+              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200">
                 <Info className="w-12 h-12 mx-auto text-gray-400"/>
-                <h3 className="mt-4 text-xl font-semibold text-gray-700">Your Enhanced Recommendations Await</h3>
+                <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">Your Enhanced Recommendations Await</h3>
                 <p className="mt-2 text-gray-500">Complete all required parameters above for comprehensive AI-powered crop analysis.</p>
               </div>
             ) : displayed.length > 0 ? (
@@ -561,9 +561,9 @@ export default function EnhancedCropRecommendations() {
                 {displayed.map((crop, index) => <CropRecommendationCard key={crop.id} crop={crop} rank={index + 1} onViewDetails={setSelectedCrop} />)}
               </div>
             ) : (
-              <div className="text-center py-16 px-6 bg-white rounded-lg shadow-md border-2 border-dashed border-gray-200">
+              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200">
                 <AlertTriangle className="w-12 h-12 mx-auto text-yellow-500"/>
-                <h3 className="mt-4 text-xl font-semibold text-gray-700">No Suitable Crops Found</h3>
+                <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">No Suitable Crops Found</h3>
                 <p className="mt-2 text-gray-500">Based on your specific criteria, no ideal crops were identified. Try adjusting your parameters.</p>
               </div>
             )}
