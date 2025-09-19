@@ -46,7 +46,6 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   const waterScore = {'Very High': 1.4, 'High': 1.2, 'Medium': 1.0, 'Low': 0.8}[crop.waterEfficiency] || 1.0;
   const seasonScore = crop.seasons.includes(currentSeason) || crop.seasons.includes("Annual") || crop.seasons.includes("Perennial") ? 1.2 : 0.8;
   
-  // --- NEW: Recency-weighted crop rotation score ---
   let rotationScore = 1.0;
   const candidateFamily = crop.cropFamily.trim();
   const previousFamilies = (filters.previousCrops || [])
@@ -56,15 +55,14 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
       return foundCrop ? foundCrop.cropFamily.trim() : null;
     });
 
-  // Check each of the 3 previous crops independently for a cumulative penalty
 if (previousFamilies[0] && previousFamilies[0] === candidateFamily) {
-  rotationScore *= 0.001; // Apply penalty for most recent
+  rotationScore *= 0.001; 
 }
 if (previousFamilies[1] && previousFamilies[1] === candidateFamily) {
-  rotationScore *= 0.3; // Apply penalty for 2nd most recent
+  rotationScore *= 0.3; 
 }
 if (previousFamilies[2] && previousFamilies[2] === candidateFamily) {
-  rotationScore *= 0.7; // Apply penalty for 3rd most recent
+  rotationScore *= 0.7; 
 }
 
   const exportScore = {'Very High': 1.3, 'High': 1.2, 'Medium': 1.0, 'Low': 0.9}[crop.exportPotential] || 1.0;
@@ -96,8 +94,8 @@ if (previousFamilies[2] && previousFamilies[2] === candidateFamily) {
 // --- UI COMPONENTS ---
 const FilterSelect = ({ name, label, value, onChange, options, placeholder }) => (
   <div>
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">{label}</label>
-    <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+    <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
       <option value="">{placeholder}</option>
       {options.map(option => (
         <option key={option.value || option} value={option.value || option}>{option.label || option}</option>
@@ -110,11 +108,11 @@ const WaterSourceCheckboxes = ({ selected, onChange }) => {
   const sources = ["Rainwater", "Borewell/Tubewell", "Canal Irrigation", "Pond/Well"];
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Available Water Sources</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Available Water Sources</label>
       <div className="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-2">
         {sources.map(s => (
-          <label key={s} className="flex items-center space-x-2 text-sm text-gray-600">
-            <input type="checkbox" name="waterSources" value={s} checked={selected.includes(s)} onChange={onChange} className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"/>
+          <label key={s} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
+            <input type="checkbox" name="waterSources" value={s} checked={selected.includes(s)} onChange={onChange} className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 bg-gray-100 dark:bg-gray-600"/>
             <span>{s}</span>
           </label>
         ))}
@@ -124,53 +122,53 @@ const WaterSourceCheckboxes = ({ selected, onChange }) => {
 };
 
 const WeatherInfoPanel = ({ weather, error, season }) => (
-  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 h-full">
-    <h3 className="font-semibold text-blue-800 mb-2">Intelligence Panel</h3>
+  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 h-full">
+    <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Intelligence Panel</h3>
     <div className="space-y-2">
-      <div className="flex items-center text-sm text-blue-700"><Calendar className="w-4 h-4 mr-2"/> Current Season: <strong className="ml-1">{season}</strong></div>
-      <div className="flex items-center text-sm text-blue-700"><Zap className="w-4 h-4 mr-2"/> Enhanced AI with 105+ crops data.</div>
-      <div className="pt-2 border-t border-blue-200 mt-2">
+      <div className="flex items-center text-sm text-blue-700 dark:text-blue-300"><Calendar className="w-4 h-4 mr-2"/> Current Season: <strong className="ml-1">{season}</strong></div>
+      <div className="flex items-center text-sm text-blue-700 dark:text-blue-300"><Zap className="w-4 h-4 mr-2"/> Enhanced AI with 105+ crops data.</div>
+      <div className="pt-2 border-t border-blue-200 dark:border-blue-800 mt-2">
         {weather ? (
           <>
-            <div className="flex items-center text-sm font-semibold text-blue-800"><MapPin className="w-4 h-4 mr-2"/>Live Weather: {weather.name}</div>
-            <div className="flex items-center text-sm text-blue-700"><Thermometer className="w-4 h-4 mr-2"/>{Math.round(weather.main.temp)}°C, feels like {Math.round(weather.main.feels_like)}°C</div>
-            <div className="flex items-center text-sm text-blue-700"><Droplets className="w-4 h-4 mr-2"/>Humidity: {weather.main.humidity}%</div>
-            <div className="flex items-center text-sm text-blue-700"><Wind className="w-4 h-4 mr-2"/>Wind: {weather.wind.speed} m/s</div>
+            <div className="flex items-center text-sm font-semibold text-blue-800 dark:text-blue-200"><MapPin className="w-4 h-4 mr-2"/>Live Weather: {weather.name}</div>
+            <div className="flex items-center text-sm text-blue-700 dark:text-blue-300"><Thermometer className="w-4 h-4 mr-2"/>{Math.round(weather.main.temp)}°C, feels like {Math.round(weather.main.feels_like)}°C</div>
+            <div className="flex items-center text-sm text-blue-700 dark:text-blue-300"><Droplets className="w-4 h-4 mr-2"/>Humidity: {weather.main.humidity}%</div>
+            <div className="flex items-center text-sm text-blue-700 dark:text-blue-300"><Wind className="w-4 h-4 mr-2"/>Wind: {weather.wind.speed} m/s</div>
           </>
-        ) : ( <div className="text-sm text-blue-600">{error || "Select a district for live weather."}</div> )}
+        ) : ( <div className="text-sm text-blue-600 dark:text-blue-400">{error || "Select a district for live weather."}</div> )}
       </div>
     </div>
   </div>
 );
 
 const AIInsightPanel = ({ filters, resultsCount, season }) => (
-  <div className="bg-green-50 border-2 border-dashed border-green-200 rounded-lg p-5 mb-8 text-center">
-    <p className="text-green-800">
+  <div className="bg-green-50 dark:bg-green-900/20 border-2 border-dashed border-green-200 dark:border-green-800 rounded-lg p-5 mb-8 text-center">
+    <p className="text-green-800 dark:text-green-200">
       Based on your selections for a farm in <strong className="font-semibold">{filters.district}</strong> with <strong className="font-semibold">{filters.soilType.toLowerCase()} soil</strong> and a <strong className="font-semibold">{filters.investmentBudget > 50000 ? 'high' : 'medium'} budget</strong>, our Enhanced AI has identified <strong className="font-semibold">{resultsCount} suitable crops</strong> for the current <strong className="font-semibold">{season} season</strong>. The recommendations are ranked by an Advanced Smart Score considering profitability, market demand, risk, sustainability, and export potential.
     </p>
   </div>
 );
 
 const CropDetailModal = ({ crop, onClose }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" onClick={onClose}>
+  <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-      <div className="sticky top-0 bg-white dark:bg-gray-800 p-5 border-b flex justify-between items-center">
+      <div className="sticky top-0 bg-white dark:bg-gray-800 p-5 border-b dark:border-gray-700 flex justify-between items-center z-10">
         <div className="flex items-center gap-3">
           <span className="text-4xl">{crop.icon}</span>
           <div>
-            <h2 className="text-2xl font-bold">{crop.name}</h2>
-            <p className="text-sm text-gray-500">{crop.type} ({crop.cropFamily})</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{crop.name}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{crop.type} ({crop.cropFamily})</p>
           </div>
         </div>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-800"><X size={24}/></button>
+        <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100"><X size={24}/></button>
       </div>
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><Calendar/> Farming Timeline</h3>
-              <ul className="space-y-2 text-sm">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Calendar/> Farming Timeline</h3>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <li><strong>Planting:</strong> {crop.plantingMonths.map(m => new Date(0, m - 1).toLocaleString('default', { month: 'long' })).join(', ')}</li>
                 <li><strong>Growing Duration:</strong> {crop.growingDuration} months</li>
                 <li><strong>Harvesting:</strong> {crop.harvestMonths.map(m => new Date(0, m - 1).toLocaleString('default', { month: 'long' })).join(', ')}</li>
@@ -178,8 +176,8 @@ const CropDetailModal = ({ crop, onClose }) => (
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><TrendingUp/> Market & Economics</h3>
-              <ul className="space-y-2 text-sm">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TrendingUp/> Market & Economics</h3>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <li><strong>Investment:</strong> ₹{crop.investment.toLocaleString()}/acre</li>
                 <li><strong>Expected Yield:</strong> {crop.avgYield} quintals/acre</li>
                 <li><strong>Market Price:</strong> {crop.marketPrice}</li>
@@ -188,22 +186,22 @@ const CropDetailModal = ({ crop, onClose }) => (
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><TestTube2/> Varieties & Nutrition</h3>
-              <p className="text-sm text-gray-600 mb-2"><strong>Recommended Varieties:</strong> {crop.varieties.join(', ')}</p>
-              <p className="text-sm text-gray-600"><strong>Nutritional Value:</strong> {crop.nutritionalValue}</p>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TestTube2/> Varieties & Nutrition</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Recommended Varieties:</strong> {crop.varieties.join(', ')}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Nutritional Value:</strong> {crop.nutritionalValue}</p>
             </div>
           </div>
           {/* Right Column */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><Sun/> Seasonal Weather Forecast</h3>
-              <div className="text-sm space-y-2">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sun/> Seasonal Weather Forecast</h3>
+              <div className="text-sm space-y-2 text-gray-800 dark:text-gray-200">
                 <div>
                   <strong>Planting Period:</strong>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {crop.plantingWeather.details.slice(0, 3).map(d => 
-                      <div key={d.month} className="bg-gray-100 p-2 rounded text-center">
-                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs">{d.rainfall} Rain</div>
+                      <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
+                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
                       </div>
                     )}
                   </div>
@@ -212,8 +210,8 @@ const CropDetailModal = ({ crop, onClose }) => (
                   <strong>Harvesting Period:</strong>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {crop.harvestWeather.details.slice(0, 3).map(d => 
-                      <div key={d.month} className="bg-gray-100 p-2 rounded text-center">
-                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs">{d.rainfall} Rain</div>
+                      <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
+                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
                       </div>
                     )}
                   </div>
@@ -221,32 +219,31 @@ const CropDetailModal = ({ crop, onClose }) => (
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><Bug/> Risk Management</h3>
-              <p className="text-sm text-gray-600 mb-2"><strong>Common Risks:</strong> {crop.commonRisks.join(', ')}</p>
-              <p className="text-sm text-gray-600 mb-2"><strong>Risk Level:</strong> {crop.riskFactor}</p>
-              <p className="text-sm text-gray-600">Regular monitoring and IPM practices recommended. Use resistant varieties and bio-pesticides when possible.</p>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Bug/> Risk Management</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Common Risks:</strong> {crop.commonRisks.join(', ')}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Risk Level:</strong> {crop.riskFactor}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Regular monitoring and IPM practices recommended. Use resistant varieties and bio-pesticides when possible.</p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2"><Sprout/> Soil & Water Requirements</h3>
-              <ul className="space-y-2 text-sm">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sprout/> Soil & Water Requirements</h3>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <li><strong>Suitable Soils:</strong> {crop.soil.join(', ')}</li>
                 <li><strong>Soil pH:</strong> {crop.soilPH[0]} - {crop.soilPH[1]}</li>
                 <li><strong>Water Requirement:</strong> {crop.water}</li>
                 <li><strong>Water Efficiency:</strong> {crop.waterEfficiency}</li>
-                {/* --- Enhanced Intercropping Display --- */}
                 {crop.interCropping && crop.interCropping.length > 0 && (
-                  <li className="pt-3 mt-3 border-t">
-                    <strong className="text-green-700">Compatible Intercrops:</strong>
-                    <p className="text-gray-600">{crop.interCropping.join(', ')}</p>
+                  <li className="pt-3 mt-3 border-t dark:border-gray-700">
+                    <strong className="text-green-700 dark:text-green-400">Compatible Intercrops:</strong>
+                    <p className="text-gray-600 dark:text-gray-300">{crop.interCropping.join(', ')}</p>
                   </li>
                 )}
               </ul>
             </div>
           </div>
         </div>
-        <div className="mt-6 pt-4 border-t">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Special Notes</h3>
-          <p className="text-sm text-gray-600">{crop.specialNotes}</p>
+        <div className="mt-6 pt-4 border-t dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Special Notes</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">{crop.specialNotes}</p>
         </div>
       </div>
     </div>
@@ -259,13 +256,13 @@ const ProfitBar = ({ investment, profit }) => {
   const isProfit = profit > 0;
   return (
     <div>
-      <div className="relative w-full bg-gray-200 rounded-full h-2.5">
+      <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
         <div className={`h-2.5 rounded-full ${isProfit ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `100%` }}></div>
         <div className="absolute top-0 left-0 bg-orange-500 h-2.5 rounded-l-full" style={{ width: `${investmentPercent}%` }}></div>
       </div>
       <div className="flex justify-between text-xs mt-1">
-        <span className="font-semibold text-orange-600">Invest: ₹{(investment || 0).toLocaleString()}</span>
-        <span className={`font-semibold ${isProfit ? 'text-green-600' : 'text-red-600'}`}>{isProfit ? 'Profit' : 'Loss'}: ₹{Math.abs(profit || 0).toLocaleString()}</span>
+        <span className="font-semibold text-orange-600 dark:text-orange-400">Invest: ₹{(investment || 0).toLocaleString()}</span>
+        <span className={`font-semibold ${isProfit ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{isProfit ? 'Profit' : 'Loss'}: ₹{Math.abs(profit || 0).toLocaleString()}</span>
       </div>
     </div>
   );
@@ -279,20 +276,20 @@ const CropRecommendationCard = ({ crop, rank, onViewDetails }) => {
     } catch { return 0; }
   };
   const profit = calculateProfit(crop);
-  const demandColor = crop.marketDemand === 'Very High' ? 'text-purple-600 bg-purple-100' : crop.marketDemand === 'High' ? 'text-green-600 bg-green-100' : crop.marketDemand === 'Medium' ? 'text-yellow-600 bg-yellow-100' : 'text-red-600 bg-red-100';
-  const riskColor = crop.riskFactor === 'High' ? 'text-red-600 bg-red-100' : crop.riskFactor === 'Medium' ? 'text-yellow-600 bg-yellow-100' : 'text-green-600 bg-green-100';
-  const waterColor = crop.waterEfficiency?.includes('Very High') ? 'text-blue-700 bg-blue-100' : crop.waterEfficiency?.includes('High') ? 'text-blue-600 bg-blue-100' : 'text-orange-600 bg-orange-100';
-  const exportColor = crop.exportPotential === 'Very High' ? 'text-purple-600 bg-purple-100' : crop.exportPotential === 'High' ? 'text-indigo-600 bg-indigo-100' : 'text-gray-600 bg-gray-100';
+  const demandColor = crop.marketDemand === 'Very High' ? 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/50' : crop.marketDemand === 'High' ? 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/50' : crop.marketDemand === 'Medium' ? 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/50' : 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/50';
+  const riskColor = crop.riskFactor === 'High' ? 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/50' : crop.riskFactor === 'Medium' ? 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/50' : 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/50';
+  const waterColor = crop.waterEfficiency?.includes('Very High') ? 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/50' : crop.waterEfficiency?.includes('High') ? 'text-blue-600 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/50' : 'text-orange-700 bg-orange-100 dark:text-orange-300 dark:bg-orange-900/50';
+  const exportColor = crop.exportPotential === 'Very High' ? 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/50' : crop.exportPotential === 'High' ? 'text-indigo-700 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900/50' : 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700';
   
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col relative">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md hover:shadow-xl dark:hover:shadow-green-900/20 transition-shadow duration-300 flex flex-col relative">
       <div className="p-5 flex-grow">
         <div className="flex items-center gap-4 mb-3">
           <span className="text-5xl">{crop.icon}</span>
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">{crop.name}</h3>
-            <p className="text-sm text-gray-500">{crop.type} • {crop.growingDuration} months</p>
-            <p className="text-xs text-gray-400">Smart Score: {crop.smartScore}/100</p>
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{crop.name}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{crop.type} • {crop.growingDuration} months</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Smart Score: {crop.smartScore}/100</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
@@ -303,15 +300,15 @@ const CropRecommendationCard = ({ crop, rank, onViewDetails }) => {
         </div>
         <div className="space-y-3 text-sm mb-4">
           <ProfitBar investment={crop.investment} profit={profit}/>
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             <div>Expected Yield: {crop.avgYield} quintals/acre</div>
             <div>Market Price: {crop.marketPrice}</div>
           </div>
         </div>
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-3 mb-4">
-          <h4 className="font-semibold text-sm mb-2 text-gray-700 dark:text-gray-200">Weather Forecast</h4>
-          <div className="flex justify-between items-center text-xs text-gray-600 mb-2"><strong>Planting:</strong><span>{crop.plantingWeather.avg}</span></div>
-          <div className="flex justify-between items-center text-xs text-gray-600"><strong>Harvest:</strong><span>{crop.harvestWeather.avg}</span></div>
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3 mb-4">
+          <h4 className="font-semibold text-sm mb-2 text-gray-700 dark:text-gray-300">Weather Forecast</h4>
+          <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-2"><strong>Planting:</strong><span>{crop.plantingWeather.avg}</span></div>
+          <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400"><strong>Harvest:</strong><span>{crop.harvestWeather.avg}</span></div>
         </div>
       </div>
       <div className="p-5 pt-0">
@@ -449,20 +446,20 @@ export default function EnhancedCropRecommendations() {
   }, [recommendations, riskFilter, waterFilter, sortBy]);
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-700 min-h-screen">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       {selectedCrop && <CropDetailModal crop={selectedCrop} onClose={() => setSelectedCrop(null)} />}
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <header className="text-center mb-10">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-800 flex items-center justify-center gap-3">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-3">
             <Leaf className="text-green-600 w-12 h-12"/> Enhanced Crop Advisory
           </h1>
-          <p className="mt-2 text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Advanced AI-powered crop advisor with 105+ crops data across 700+ districts. Get personalized recommendations based on comprehensive analysis.
           </p>
         </header>
         
        <main>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FilterSelect name="state" label="State" value={filters.state} onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, district: "" }))} options={Object.keys(DISTRICTS)} placeholder="Select State"/>
@@ -478,9 +475,8 @@ export default function EnhancedCropRecommendations() {
                 <WaterSourceCheckboxes selected={filters.waterSources} onChange={handleWaterSourceChange}/>
               </div>
 
-              {/* --- NEW: Previous Crops History --- */}
-              <div className="sm:col-span-2 border-t pt-4">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2">Previous Crop History (Optional)</h4>
+              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Previous Crop History (Optional)</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <FilterSelect name="previousCrop-0" label="Most Recent Crop" value={filters.previousCrops[0]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
                   <FilterSelect name="previousCrop-1" label="2nd Previous Crop" value={filters.previousCrops[1]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
@@ -495,20 +491,20 @@ export default function EnhancedCropRecommendations() {
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="w-full md:w-1/2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Recommendation Progress</p>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recommendation Progress</p>
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
                   <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${(filledFilters/totalFilters)*100}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{isFormComplete ? 'Ready for Enhanced AI Analysis!' : `${filledFilters} of ${totalFilters} required parameters selected.`}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{isFormComplete ? 'Ready for Enhanced AI Analysis!' : `${filledFilters} of ${totalFilters} required parameters selected.`}</p>
               </div>
               <div className="flex-grow flex items-center gap-3 w-full md:w-auto">
-                <button onClick={handleGetRecommendations} disabled={!isFormComplete} className="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 flex items-center justify-center gap-2">
+                <button onClick={handleGetRecommendations} disabled={!isFormComplete} className="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-400 disabled:dark:bg-gray-500 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 flex items-center justify-center gap-2">
                   <ChevronsRight size={20}/> Get Enhanced AI Recommendations
                 </button>
-                <button onClick={handleClearFilters} className="p-3 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                <button onClick={handleClearFilters} className="p-3 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
                   <RefreshCcw size={20}/>
                 </button>
               </div>
@@ -521,50 +517,50 @@ export default function EnhancedCropRecommendations() {
             
             <div className="flex items-center gap-3 mb-6">
               <BarChart className="w-8 h-8 text-green-600"/>
-              <h2 className="text-3xl font-bold text-gray-800">Enhanced AI Results</h2>
+              <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Enhanced AI Results</h2>
             </div>
             
             {hasSearched && recommendations.length > 0 && (
               <div className="flex flex-wrap gap-4 mb-6 items-center">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">Sort By</option>
                   <option value="risk">Risk (Low → High)</option>
                   <option value="water">Water (Low → High)</option>
                   <option value="profit">Profit (High → Low)</option>
                   <option value="smartScore">Smart Score (High → Low)</option>
                 </select>
-                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">All Risk Levels</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
-                <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
                   <option value="">All Water Efficiency</option>
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                   <option value="Very High">Very High</option>
                 </select>
-                <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 rounded-md border border-gray-200 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200">Reset Filters</button>
+                <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600">Reset Filters</button>
               </div>
             )}
 
             {!hasSearched ? (
-              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200">
-                <Info className="w-12 h-12 mx-auto text-gray-400"/>
+              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
+                <Info className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500"/>
                 <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">Your Enhanced Recommendations Await</h3>
-                <p className="mt-2 text-gray-500">Complete all required parameters above for comprehensive AI-powered crop analysis.</p>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">Complete all required parameters above for comprehensive AI-powered crop analysis.</p>
               </div>
             ) : displayed.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {displayed.map((crop, index) => <CropRecommendationCard key={crop.id} crop={crop} rank={index + 1} onViewDetails={setSelectedCrop} />)}
               </div>
             ) : (
-              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200">
+              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
                 <AlertTriangle className="w-12 h-12 mx-auto text-yellow-500"/>
                 <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">No Suitable Crops Found</h3>
-                <p className="mt-2 text-gray-500">Based on your specific criteria, no ideal crops were identified. Try adjusting your parameters.</p>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">Based on your specific criteria, no ideal crops were identified. Try adjusting your parameters.</p>
               </div>
             )}
           </div>
@@ -573,3 +569,4 @@ export default function EnhancedCropRecommendations() {
     </div>
   );
 }
+
