@@ -1,6 +1,6 @@
 // src/components/ChatbaseControls.jsx
 import { useEffect, useState } from "react";
-import { FiMessageCircle } from "react-icons/fi"; // npm install react-icons
+import { FiMessageCircle } from "react-icons/fi"; // npm install react-icons if not installed
 
 export default function ChatbaseControls() {
   const [ready, setReady] = useState(false);
@@ -13,35 +13,38 @@ export default function ChatbaseControls() {
         clearInterval(check);
       }
     }, 500);
+
     return () => clearInterval(check);
   }, []);
 
-  const toggleBot = () => ready && window.chatbase("toggle");
+  const toggleBot = () => {
+    if (ready) window.chatbase("toggle");
+  };
 
   return (
     <div
       style={{
         position: "fixed",
         bottom: "20px",
-        left: "20px", // ⬅️ Move to right corner if you prefer: right: "20px"
+        right: "20px",
         zIndex: 9999,
       }}
     >
       <button
         onClick={toggleBot}
         style={{
-          background: "#2563eb",
-          color: "white",
+          backgroundColor: "#16a34a",
+          color: "#fff",
           border: "none",
           padding: "16px",
           borderRadius: "50%",
           boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
           cursor: "pointer",
-          transition: "transform 0.2s",
+          transition: "transform 0.2s ease",
         }}
-        title="Chat with us"
         onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+        title="Chat with us"
       >
         <FiMessageCircle size={22} />
       </button>
