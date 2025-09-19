@@ -93,8 +93,8 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   
   // Crop rotation benefits
   const previousCropFamily = filters.previousCrop ? 
-    CROPS.find(c => c.name === filters.previousCrop)?.cropFamily : null;
-  const rotationScore = (previousCropFamily && crop.cropFamily === previousCropFamily) ? 0.85 : 1.0;
+  CROPS.find(c => c.name.trim() === filters.previousCrop.trim())?.cropFamily : null;
+  const rotationScore = (previousCropFamily && crop.cropFamily === previousCropFamily) ? 0.0001 : 1.0;
   
   // Export potential scoring
   const exportScore = {
