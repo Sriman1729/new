@@ -17,7 +17,9 @@ export default function ChatbaseControls() {
     return () => clearInterval(check);
   }, []);
 
-  const toggleBot = () => ready && window.chatbase("toggle");
+  const toggleBot = () => {
+    if (ready) window.chatbase("toggle");
+  };
 
   return (
     <div
