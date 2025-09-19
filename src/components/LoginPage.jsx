@@ -1,16 +1,17 @@
+// src/components/LoginPage.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const [passcode, setPasscode] = useState("");
   const navigate = useNavigate();
-  const CORRECT_PASS = "8786"; // replace with your real passcode
+  const CORRECT_PASS = "8786"; // your admin passcode
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (passcode === CORRECT_PASS) {
       localStorage.setItem("isAdmin", "true"); // ✅ store admin flag
-      navigate("/Admin"); // redirect
+      navigate("/admin", { replace: true }); // redirect
     } else {
       alert("Incorrect passcode");
     }
