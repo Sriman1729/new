@@ -10,7 +10,7 @@ export default function LoginPage() {
     e.preventDefault();
     if (passcode === CORRECT_PASS) {
       localStorage.setItem("isAdmin", "true"); // ✅ store admin flag
-      navigate("/admin"); // redirect
+      navigate("/Admin"); // redirect
     } else {
       alert("Incorrect passcode");
     }
