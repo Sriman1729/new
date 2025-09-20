@@ -66,12 +66,13 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   const baseSmartScore = (
     (profitRatio * 0.25) + (demandScore * 0.15) + (riskScore * 0.15) + (waterScore * 0.10) +
     (seasonScore * 0.10) + (exportScore * 0.08) + (mechanizationScore * 0.05) +
-    // Note: rotationScore is removed from the weighted sum
     (weatherScore * 0.09) + (durationScore * 0.02) + (storageScore * 0.01)
   ) * 100;
 
-  // Next, determine a penalty multiplier based on rotation history.
-  let rotationPenaltyMultiplier = 1.0;
+  // --- New Penalty Logic ---
+  // We determine the single highest penalty and apply it.
+  let penaltyPercentage = 0.0; // Start with no penalty
+
   const candidateFamily = crop.cropFamily.trim();
   const previousFamilies = (filters.previousCrops || [])
     .map(cropName => {
@@ -81,27 +82,28 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
     })
     .filter(Boolean);
 
-  // **Penalty 1: Bad History (Monoculture)**
-  // If the last two crops were from the same family, apply a harsh penalty to ANY suggested crop.
-  if (previousFamilies.length >= 2 && previousFamilies[0] === previousFamilies[1]) {
-    rotationPenaltyMultiplier = 0.6; // Harsh 40% penalty on the ENTIRE score for poor soil health
+  // **Rule C (Most Severe): All 3 previous crops match**
+  if (previousFamilies.length === 3 && previousFamilies[0] === previousFamilies[1] && previousFamilies[1] === previousFamilies[2]) {
+    penaltyPercentage = 0.75; // 75% penalty
+  }
+  // **Rule B: Previous 2 crops match**
+  else if (previousFamilies.length >= 2 && previousFamilies[0] === previousFamilies[1]) {
+    penaltyPercentage = 0.45; // 45% penalty
   }
 
-  // **Penalty 2: Bad Candidate Choice (Violates Rotation)**
-  // This penalty is more severe and can override the history penalty if it's a worse violation.
-  if (previousFamilies.length > 0 && previousFamilies[0] === candidateFamily) {
-    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.01); // 99% penalty, effectively disqualifies the crop
-  } else if (previousFamilies.length > 1 && previousFamilies[1] === candidateFamily) {
-    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.4); // 60% penalty
-  } else if (previousFamilies.length > 2 && previousFamilies[2] === candidateFamily) {
-    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.8); // 20% penalty
+  // **Rule A: Candidate matches the most recent crop**
+  // This check ensures that if this condition is met, the penalty is AT LEAST 30%.
+  // If a worse penalty from history already applies, the worse penalty is kept.
+  if (previousFamilies.length > 0 && candidateFamily === previousFamilies[0]) {
+    penaltyPercentage = Math.max(penaltyPercentage, 0.30); // Apply 30% penalty or keep the higher existing penalty
   }
 
-  // Finally, apply the penalty multiplier to the base score.
+  const rotationPenaltyMultiplier = 1.0 - penaltyPercentage;
   const finalSmartScore = baseSmartScore * rotationPenaltyMultiplier;
   
   return Math.max(0, Math.round(finalSmartScore * 100) / 100);
 };
+
 
 // --- UI COMPONENTS ---
 const FilterSelect = ({ name, label, value, onChange, options, placeholder }) => (
@@ -185,81 +187,81 @@ const CropDetailModal = ({ crop, onClose }) => (
                 <li><strong>Growing Duration:</strong> {crop.growingDuration} months</li>
                 <li><strong>Harvesting:</strong> {crop.harvestMonths.map(m => new Date(0, m - 1).toLocaleString('default', { month: 'long' })).join(', ')}</li>
                 <li><strong>Storage Life:</strong> {crop.storageLife} months</li>
-              </ul>
+            	</ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TrendingUp/> Market & Economics</h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                <li><strong>Investment:</strong> ₹{crop.investment.toLocaleString()}/acre</li>
-                <li><strong>Expected Yield:</strong> {crop.avgYield} quintals/acre</li>
-                <li><strong>Market Price:</strong> {crop.marketPrice}</li>
-                <li><strong>Export Potential:</strong> {crop.exportPotential}</li>
-                <li><strong>Mechanization Level:</strong> {crop.mechanization}</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TestTube2/> Varieties & Nutrition</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Recommended Varieties:</strong> {crop.varieties.join(', ')}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300"><strong>Nutritional Value:</strong> {crop.nutritionalValue}</p>
-            </div>
-          </div>
-          {/* Right Column */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sun/> Seasonal Weather Forecast</h3>
-              <div className="text-sm space-y-2 text-gray-800 dark:text-gray-200">
-                <div>
-                  <strong>Planting Period:</strong>
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    {crop.plantingWeather.details.slice(0, 3).map(d => 
-                      <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
-                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <strong>Harvesting Period:</strong>
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    {crop.harvestWeather.details.slice(0, 3).map(d => 
-                      <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
-                        <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Bug/> Risk Management</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Common Risks:</strong> {crop.commonRisks.join(', ')}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Risk Level:</strong> {crop.riskFactor}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Regular monitoring and IPM practices recommended. Use resistant varieties and bio-pesticides when possible.</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sprout/> Soil & Water Requirements</h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                <li><strong>Suitable Soils:</strong> {crop.soil.join(', ')}</li>
-                <li><strong>Soil pH:</strong> {crop.soilPH[0]} - {crop.soilPH[1]}</li>
-                <li><strong>Water Requirement:</strong> {crop.water}</li>
-                <li><strong>Water Efficiency:</strong> {crop.waterEfficiency}</li>
-                {crop.interCropping && crop.interCropping.length > 0 && (
-                  <li className="pt-3 mt-3 border-t dark:border-gray-700">
-                    <strong className="text-green-700 dark:text-green-400">Compatible Intercrops:</strong>
-                    <p className="text-gray-600 dark:text-gray-300">{crop.interCropping.join(', ')}</p>
-                  </li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6 pt-4 border-t dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Special Notes</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{crop.specialNotes}</p>
-        </div>
-      </div>
-    </div>
+            	<h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TrendingUp/> Market & Economics</h3>
+            	<ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            	  <li><strong>Investment:</strong> ₹{crop.investment.toLocaleString()}/acre</li>
+            	  <li><strong>Expected Yield:</strong> {crop.avgYield} quintals/acre</li>
+            	  <li><strong>Market Price:</strong> {crop.marketPrice}</li>
+            	  <li><strong>Export Potential:</strong> {crop.exportPotential}</li>
+            	  <li><strong>Mechanization Level:</strong> {crop.mechanization}</li>
+          	  </ul>
+        	  </div>
+        	  <div>
+        		<h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><TestTube2/> Varieties & Nutrition</h3>
+        		<p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Recommended Varieties:</strong> {crop.varieties.join(', ')}</p>
+        		<p className="text-sm text-gray-600 dark:text-gray-300"><strong>Nutritional Value:</strong> {crop.nutritionalValue}</p>
+      	  </div>
+    	  </div>
+    	  {/* Right Column */}
+    	  <div className="space-y-6">
+    		  <div>
+    			  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sun/> Seasonal Weather Forecast</h3>
+    			  <div className="text-sm space-y-2 text-gray-800 dark:text-gray-200">
+    				  <div>
+    					  <strong>Planting Period:</strong>
+    					  <div className="grid grid-cols-3 gap-2 mt-1">
+    						  {crop.plantingWeather.details.slice(0, 3).map(d => 
+    							  <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
+    								  <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
+    							  </div>
+    						  )}
+    					  </div>
+    				  </div>
+    				  <div>
+    					  <strong>Harvesting Period:</strong>
+    					  <div className="grid grid-cols-3 gap-2 mt-1">
+    						  {crop.harvestWeather.details.slice(0, 3).map(d => 
+    							  <div key={d.month} className="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
+    								  <div className="font-bold">{d.month}</div><div>{d.temp}</div><div className="text-xs text-gray-500 dark:text-gray-400">{d.rainfall} Rain</div>
+    							  </div>
+    						  )}
+    					  </div>
+    				  </div>
+    			  </div>
+    		  </div>
+    		  <div>
+    			  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Bug/> Risk Management</h3>
+    			  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Common Risks:</strong> {crop.commonRisks.join(', ')}</p>
+    			  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Risk Level:</strong> {crop.riskFactor}</p>
+    			  <p className="text-sm text-gray-600 dark:text-gray-300">Regular monitoring and IPM practices recommended. Use resistant varieties and bio-pesticides when possible.</p>
+    		  </div>
+    		  <div>
+    			  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2"><Sprout/> Soil & Water Requirements</h3>
+    			  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+    				  <li><strong>Suitable Soils:</strong> {crop.soil.join(', ')}</li>
+    				  <li><strong>Soil pH:</strong> {crop.soilPH[0]} - {crop.soilPH[1]}</li>
+    				  <li><strong>Water Requirement:</strong> {crop.water}</li>
+    				  <li><strong>Water Efficiency:</strong> {crop.waterEfficiency}</li>
+    				  {crop.interCropping && crop.interCropping.length > 0 && (
+    					  <li className="pt-3 mt-3 border-t dark:border-gray-700">
+    						  <strong className="text-green-700 dark:text-green-400">Compatible Intercrops:</strong>
+    						  <p className="text-gray-600 dark:text-gray-300">{crop.interCropping.join(', ')}</p>
+    					  </li>
+    				  )}
+    			  </ul>
+    		  </div>
+    	  </div>
+      </div>
+      <div className="mt-6 pt-4 border-t dark:border-gray-700">
+    	  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Special Notes</h3>
+    	  <p className="text-sm text-gray-600 dark:text-gray-300">{crop.specialNotes}</p>
+      </div>
+    </div>
   </div>
+</div>
 );
 
 const ProfitBar = ({ investment, profit }) => {
@@ -475,8 +477,8 @@ export default function EnhancedCropRecommendations() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <FilterSelect name="state" label="State" value={filters.state} onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, district: "" }))} options={Object.keys(DISTRICTS)} placeholder="Select State"/>
-              <FilterSelect name="district" label="District" value={filters.district} onChange={handleFilterChange} options={filters.state ? DISTRICTS[filters.state] : []} placeholder={filters.state ? "Select District" : "Select State first"}/>
-              <FilterSelect name="soilType" label="Soil Type" value={filters.soilType} onChange={handleFilterChange} options={SOIL_TYPES} placeholder="Select Soil Type"/>
+            	<FilterSelect name="district" label="District" value={filters.district} onChange={handleFilterChange} options={filters.state ? DISTRICTS[filters.state] : []} placeholder={filters.state ? "Select District" : "Select State first"}/>
+            	<FilterSelect name="soilType" label="Soil Type" value={filters.soilType} onChange={handleFilterChange} options={SOIL_TYPES} placeholder="Select Soil Type"/>
             	<FilterSelect name="growingDuration" label="Preferred Growing Duration" value={filters.growingDuration} onChange={handleFilterChange} options={[{label: "Short (1-3 months)", value: "1-3"}, {label: "Medium (4-6 months)", value: "4-6"}, {label: "Long (6+ months)", value: "7-99"}]} placeholder="Select Duration"/>
 
             	<div className="sm:col-span-2">
