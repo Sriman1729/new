@@ -35,7 +35,7 @@ const getSeasonalWeatherPrediction = (months) => {
   return { avg: `~${Math.round(aT/months.length)}°C | ${Math.round(aH/months.length)}% Hum`, details: d };
 };
 
-// --- ENHANCED RECOMMENDATION ALGORITHM ---
+// --- ⚠️ REVISED RECOMMENDATION ALGORITHM ---
 const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   const price = parseInt((crop.marketPrice || "0").toString().replace(/[^0-9]/g, ''), 10) || 0;
   const profit = (crop.avgYield * price) - (crop.investment || 0);
@@ -45,44 +45,6 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   const riskScore = {'Low': 1.3, 'Medium': 1.0, 'High': 0.7}[crop.riskFactor] || 1.0;
   const waterScore = {'Very High': 1.4, 'High': 1.2, 'Medium': 1.0, 'Low': 0.8}[crop.waterEfficiency] || 1.0;
   const seasonScore = crop.seasons.includes(currentSeason) || crop.seasons.includes("Annual") || crop.seasons.includes("Perennial") ? 1.2 : 0.8;
-  
-  // --- ⚠️ REVISED & ENHANCED ROTATION SCORE LOGIC ---
-  let rotationScore = 1.0;
-  const candidateFamily = crop.cropFamily.trim();
-
-  // Get the families of the last three crops, ignoring any empty/unselected fields
-  const previousFamilies = (filters.previousCrops || [])
-    .map(cropName => {
-      if (!cropName) return null;
-      const foundCrop = CROPS.find(c => c.name.trim() === cropName.trim());
-      return foundCrop ? foundCrop.cropFamily.trim() : null;
-    })
-    .filter(Boolean); // This removes any null entries, creating a clean list of past families
-
-  // 1. Penalize if the CANDIDATE crop repeats a family from recent history
-  // Heaviest penalty for repeating the most recent crop's family
-  if (previousFamilies.length > 0 && previousFamilies[0] === candidateFamily) {
-    rotationScore *= 0.001; // Drastic penalty: this is not a valid rotation
-  } 
-  // Medium penalty for repeating the 2nd previous crop's family
-  else if (previousFamilies.length > 1 && previousFamilies[1] === candidateFamily) {
-    rotationScore *= 0.3;
-  }
-  // Small penalty for repeating the 3rd previous crop's family
-  else if (previousFamilies.length > 2 && previousFamilies[2] === candidateFamily) {
-    rotationScore *= 0.7;
-  }
-
-  // 2. Penalize for POOR ROTATION HISTORY (monoculture) even if the candidate crop is different.
-  // This reflects existing soil health issues from previous seasons.
-  if (previousFamilies.length >= 2) {
-    // DRASTIC PENALTY: If the last two crops were from the same family (e.g., Rice -> Rice)
-    if (previousFamilies[0] === previousFamilies[1]) {
-      rotationScore *= 0.1; // Reduce score by 90% due to severe soil strain
-    }
-  }
-  // --- END OF REVISED LOGIC ---
-
   const exportScore = {'Very High': 1.3, 'High': 1.2, 'Medium': 1.0, 'Low': 0.9}[crop.exportPotential] || 1.0;
   const mechanizationScore = {'High': 1.2, 'Medium': 1.0, 'Low': 0.9}[crop.mechanization] || 1.0;
   
@@ -100,15 +62,46 @@ const calculateEnhancedSmartScore = (crop, filters, currentSeason, weather) => {
   
   const storageScore = crop.storageLife > 6 ? 1.1 : crop.storageLife > 3 ? 1.0 : 0.9;
   
-  const smartScore = (
+  // First, calculate the base score without considering rotation.
+  const baseSmartScore = (
     (profitRatio * 0.25) + (demandScore * 0.15) + (riskScore * 0.15) + (waterScore * 0.10) +
     (seasonScore * 0.10) + (exportScore * 0.08) + (mechanizationScore * 0.05) +
-    (rotationScore * 0.05) + (weatherScore * 0.04) + (durationScore * 0.02) + (storageScore * 0.01)
+    // Note: rotationScore is removed from the weighted sum
+    (weatherScore * 0.09) + (durationScore * 0.02) + (storageScore * 0.01)
   ) * 100;
-  
-  return Math.max(0, Math.round(smartScore * 100) / 100);
-};
 
+  // Next, determine a penalty multiplier based on rotation history.
+  let rotationPenaltyMultiplier = 1.0;
+  const candidateFamily = crop.cropFamily.trim();
+  const previousFamilies = (filters.previousCrops || [])
+    .map(cropName => {
+      if (!cropName) return null;
+      const foundCrop = CROPS.find(c => c.name.trim() === cropName.trim());
+      return foundCrop ? foundCrop.cropFamily.trim() : null;
+    })
+    .filter(Boolean);
+
+  // **Penalty 1: Bad History (Monoculture)**
+  // If the last two crops were from the same family, apply a harsh penalty to ANY suggested crop.
+  if (previousFamilies.length >= 2 && previousFamilies[0] === previousFamilies[1]) {
+    rotationPenaltyMultiplier = 0.6; // Harsh 40% penalty on the ENTIRE score for poor soil health
+  }
+
+  // **Penalty 2: Bad Candidate Choice (Violates Rotation)**
+  // This penalty is more severe and can override the history penalty if it's a worse violation.
+  if (previousFamilies.length > 0 && previousFamilies[0] === candidateFamily) {
+    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.01); // 99% penalty, effectively disqualifies the crop
+  } else if (previousFamilies.length > 1 && previousFamilies[1] === candidateFamily) {
+    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.4); // 60% penalty
+  } else if (previousFamilies.length > 2 && previousFamilies[2] === candidateFamily) {
+    rotationPenaltyMultiplier = Math.min(rotationPenaltyMultiplier, 0.8); // 20% penalty
+  }
+
+  // Finally, apply the penalty multiplier to the base score.
+  const finalSmartScore = baseSmartScore * rotationPenaltyMultiplier;
+  
+  return Math.max(0, Math.round(finalSmartScore * 100) / 100);
+};
 
 // --- UI COMPONENTS ---
 const FilterSelect = ({ name, label, value, onChange, options, placeholder }) => (
@@ -473,7 +466,7 @@ export default function EnhancedCropRecommendations() {
             <Leaf className="text-green-600 w-12 h-12"/> Enhanced Crop Advisory
           </h1>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Advanced AI-powered crop advisor with 105+ crops data across 700+ districts. Get personalized recommendations based on comprehensive analysis.
+          	Advanced AI-powered crop advisor with 105+ crops data across 700+ districts. Get personalized recommendations based on comprehensive analysis.
           </p>
         </header>
         
@@ -484,107 +477,107 @@ export default function EnhancedCropRecommendations() {
               <FilterSelect name="state" label="State" value={filters.state} onChange={(e) => setFilters(prev => ({ ...prev, state: e.target.value, district: "" }))} options={Object.keys(DISTRICTS)} placeholder="Select State"/>
               <FilterSelect name="district" label="District" value={filters.district} onChange={handleFilterChange} options={filters.state ? DISTRICTS[filters.state] : []} placeholder={filters.state ? "Select District" : "Select State first"}/>
               <FilterSelect name="soilType" label="Soil Type" value={filters.soilType} onChange={handleFilterChange} options={SOIL_TYPES} placeholder="Select Soil Type"/>
-              <FilterSelect name="growingDuration" label="Preferred Growing Duration" value={filters.growingDuration} onChange={handleFilterChange} options={[{label: "Short (1-3 months)", value: "1-3"}, {label: "Medium (4-6 months)", value: "4-6"}, {label: "Long (6+ months)", value: "7-99"}]} placeholder="Select Duration"/>
+            	<FilterSelect name="growingDuration" label="Preferred Growing Duration" value={filters.growingDuration} onChange={handleFilterChange} options={[{label: "Short (1-3 months)", value: "1-3"}, {label: "Medium (4-6 months)", value: "4-6"}, {label: "Long (6+ months)", value: "7-99"}]} placeholder="Select Duration"/>
 
-              <div className="sm:col-span-2">
-                <FilterSelect name="investmentBudget" label="Investment Budget (per acre)" value={filters.investmentBudget} onChange={handleFilterChange} options={[{label: "Low (Up to ₹25,000)", value: 25000}, {label: "Medium (Up to ₹50,000)", value: 50000}, {label: "High (Up to ₹75,000)", value: 75000}, {label: "Very High (Above ₹75,000)", value: 200000}]} placeholder="Select Budget Range"/>
-              </div>
+            	<div className="sm:col-span-2">
+            	  <FilterSelect name="investmentBudget" label="Investment Budget (per acre)" value={filters.investmentBudget} onChange={handleFilterChange} options={[{label: "Low (Up to ₹25,000)", value: 25000}, {label: "Medium (Up to ₹50,000)", value: 50000}, {label: "High (Up to ₹75,000)", value: 75000}, {label: "Very High (Above ₹75,000)", value: 200000}]} placeholder="Select Budget Range"/>
+            	</div>
 
-              <div className="sm:col-span-2">
-                <WaterSourceCheckboxes selected={filters.waterSources} onChange={handleWaterSourceChange}/>
-              </div>
+            	<div className="sm:col-span-2">
+            	  <WaterSourceCheckboxes selected={filters.waterSources} onChange={handleWaterSourceChange}/>
+          	  </div>
 
-              <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4">
-                <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Previous Crop History (Optional)</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <FilterSelect name="previousCrop-0" label="Most Recent Crop" value={filters.previousCrops[0]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
-                  <FilterSelect name="previousCrop-1" label="2nd Previous Crop" value={filters.previousCrops[1]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
-                  <FilterSelect name="previousCrop-2" label="3rd Previous Crop" value={filters.previousCrops[2]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
-                </div>
-              </div>
+          	  <div className="sm:col-span-2 border-t dark:border-gray-700 pt-4">
+          	    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Previous Crop History (Optional)</h4>
+          	    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          	      <FilterSelect name="previousCrop-0" label="Most Recent Crop" value={filters.previousCrops[0]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
+          	      <FilterSelect name="previousCrop-1" label="2nd Previous Crop" value={filters.previousCrops[1]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
+          	      <FilterSelect name="previousCrop-2" label="3rd Previous Crop" value={filters.previousCrops[2]} onChange={handlePreviousCropChange} options={CROPS.map(c => c.name)} placeholder="None"/>
+          	    </div>
+          	  </div>
 
-            </div>
-            
-            <div className="md:col-span-2 lg:col-span-1">
-              <WeatherInfoPanel weather={weather} error={weatherError} season={season}/>
-            </div>
-          </div>
+          	</div>
+          	
+          	<div className="md:col-span-2 lg:col-span-1">
+          	  <WeatherInfoPanel weather={weather} error={weatherError} season={season}/>
+        	  </div>
+      	  </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="w-full md:w-1/2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recommendation Progress</p>
-                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
-                  <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${(filledFilters/totalFilters)*100}%` }}></div>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{isFormComplete ? 'Ready for Enhanced AI Analysis!' : `${filledFilters} of ${totalFilters} required parameters selected.`}</p>
-              </div>
-              <div className="flex-grow flex items-center gap-3 w-full md:w-auto">
-                <button onClick={handleGetRecommendations} disabled={!isFormComplete} className="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-400 disabled:dark:bg-gray-500 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 flex items-center justify-center gap-2">
-                  <ChevronsRight size={20}/> Get Enhanced AI Recommendations
-                </button>
-                <button onClick={handleClearFilters} className="p-3 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
-                  <RefreshCcw size={20}/>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      	  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+      	    <div className="flex flex-col md:flex-row gap-4 items-center">
+      	      <div className="w-full md:w-1/2">
+      	        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recommendation Progress</p>
+      	        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+      	          <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{ width: `${(filledFilters/totalFilters)*100}%` }}></div>
+      	        </div>
+      	        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{isFormComplete ? 'Ready for Enhanced AI Analysis!' : `${filledFilters} of ${totalFilters} required parameters selected.`}</p>
+    	        </div>
+    	        <div className="flex-grow flex items-center gap-3 w-full md:w-auto">
+    	          <button onClick={handleGetRecommendations} disabled={!isFormComplete} className="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-400 disabled:dark:bg-gray-500 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 flex items-center justify-center gap-2">
+    	            <ChevronsRight size={20}/> Get Enhanced AI Recommendations
+    	          </button>
+    	          <button onClick={handleClearFilters} className="p-3 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
+    	            <RefreshCcw size={20}/>
+    	          </button>
+    	        </div>
+    	      </div>
+    	    </div>
+    	  </div>
 
-          <div className="mt-12">
-            {hasSearched && <AIInsightPanel filters={filters} resultsCount={recommendations.length} season={season} />}
-            
-            <div className="flex items-center gap-3 mb-6">
-              <BarChart className="w-8 h-8 text-green-600"/>
-              <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Enhanced AI Results</h2>
-            </div>
-            
-            {hasSearched && recommendations.length > 0 && (
-              <div className="flex flex-wrap gap-4 mb-6 items-center">
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">Sort By</option>
-                  <option value="risk">Risk (Low → High)</option>
-                  <option value="water">Water (Low → High)</option>
-                  <option value="profit">Profit (High → Low)</option>
-                  <option value="smartScore">Smart Score (High → Low)</option>
-                </select>
-                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">All Risk Levels</option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-                <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option value="">All Water Efficiency</option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Very High">Very High</option>
-                </select>
-                <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600">Reset Filters</button>
-              </div>
-            )}
+    	    <div className="mt-12">
+    	      {hasSearched && <AIInsightPanel filters={filters} resultsCount={recommendations.length} season={season} />}
+    	      
+    	      <div className="flex items-center gap-3 mb-6">
+    	        <BarChart className="w-8 h-8 text-green-600"/>
+    	        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Enhanced AI Results</h2>
+    	      </div>
+    	      
+    	      {hasSearched && recommendations.length > 0 && (
+    	        <div className="flex flex-wrap gap-4 mb-6 items-center">
+    	          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+    	            <option value="">Sort By</option>
+    	            <option value="risk">Risk (Low → High)</option>
+  	            <option value="water">Water (Low → High)</option>
+  	            <option value="profit">Profit (High → Low)</option>
+  	            <option value="smartScore">Smart Score (High → Low)</option>
+  	          </select>
+  	          <select value={riskFilter} onChange={e => setRiskFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+    	            <option value="">All Risk Levels</option>
+    	            <option value="Low">Low</option>
+  	            <option value="Medium">Medium</option>
+  	            <option value="High">High</option>
+  	          </select>
+  	          <select value={waterFilter} onChange={e => setWaterFilter(e.target.value)} className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+  	            <option value="">All Water Efficiency</option>
+  	            <option value="Low">Low</option>
+  	            <option value="Medium">Medium</option>
+  	            <option value="High">High</option>
+  	            <option value="Very High">Very High</option>
+  	          </select>
+  	          <button onClick={() => { setRiskFilter(""); setWaterFilter(""); setSortBy(""); }} className="ml-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600">Reset Filters</button>
+  	        </div>
+  	      )}
 
-            {!hasSearched ? (
-              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <Info className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500"/>
-                <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">Your Enhanced Recommendations Await</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">Complete all required parameters above for comprehensive AI-powered crop analysis.</p>
-              </div>
-            ) : displayed.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {displayed.map((crop, index) => <CropRecommendationCard key={crop.id} crop={crop} rank={index + 1} onViewDetails={setSelectedCrop} />)}
-              </div>
-            ) : (
-              <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <AlertTriangle className="w-12 h-12 mx-auto text-yellow-500"/>
-                <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">No Suitable Crops Found</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">Based on your specific criteria, no ideal crops were identified. Try adjusting your parameters.</p>
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
-    </div>
+  	      {!hasSearched ? (
+  	        <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
+  	          <Info className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500"/>
+  	          <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">Your Enhanced Recommendations Await</h3>
+  	          <p className="mt-2 text-gray-500 dark:text-gray-400">Complete all required parameters above for comprehensive AI-powered crop analysis.</p>
+  	        </div>
+  	      ) : displayed.length > 0 ? (
+  	        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  	          {displayed.map((crop, index) => <CropRecommendationCard key={crop.id} crop={crop} rank={index + 1} onViewDetails={setSelectedCrop} />)}
+  	        </div>
+  	      ) : (
+  	        <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border-2 border-dashed border-gray-200 dark:border-gray-700">
+  	          <AlertTriangle className="w-12 h-12 mx-auto text-yellow-500"/>
+  	          <h3 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-200">No Suitable Crops Found</h3>
+  	          <p className="mt-2 text-gray-500 dark:text-gray-400">Based on your specific criteria, no ideal crops were identified. Try adjusting your parameters.</p>
+  	        </div>
+  	      )}
+  	    </div>
+  	  </main>
+  	</div>
+   </div>
   );
 }
