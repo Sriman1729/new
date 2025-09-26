@@ -468,7 +468,7 @@ export default function EnhancedCropRecommendations() {
             <Leaf className="text-green-600 w-12 h-12"/> Enhanced Crop Advisory
           </h1>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          	Advanced AI-powered crop advisor with 105+ crops data across 700+ districts. Get personalized recommendations based on comprehensive analysis.
+          	Smart crop advisor with 105+ crops data across 700+ districts. Get personalized recommendations based on comprehensive analysis.
           </p>
         </header>
         
@@ -516,7 +516,7 @@ export default function EnhancedCropRecommendations() {
     	        </div>
     	        <div className="flex-grow flex items-center gap-3 w-full md:w-auto">
     	          <button onClick={handleGetRecommendations} disabled={!isFormComplete} className="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-400 disabled:dark:bg-gray-500 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:focus:ring-green-800 flex items-center justify-center gap-2">
-    	            <ChevronsRight size={20}/> Get Enhanced AI Recommendations
+    	            <ChevronsRight size={20}/> Smart Crops Recommendations
     	          </button>
     	          <button onClick={handleClearFilters} className="p-3 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
     	            <RefreshCcw size={20}/>
@@ -531,7 +531,7 @@ export default function EnhancedCropRecommendations() {
     	      
     	      <div className="flex items-center gap-3 mb-6">
     	        <BarChart className="w-8 h-8 text-green-600"/>
-    	        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Enhanced AI Results</h2>
+    	        <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Crop Recommendation Results</h2>
     	      </div>
     	      
     	      {hasSearched && recommendations.length > 0 && (
