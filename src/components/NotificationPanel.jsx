@@ -11,7 +11,7 @@ export default function NotificationPanel() {
   }, []);
 
   const fetchNotifications = async () => {
-    const res = await axios.get("http://localhost:5000/notifications");
+    const res = await axios.get("https://new-gsp1.onrender.com/notifications");
     setNotifications(res.data.filter((n) => n.active));
   };
 
