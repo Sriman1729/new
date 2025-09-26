@@ -1,26 +1,42 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const NOTIF_FILE = "./notifications.json";
+const NOTIF_FILE = path.join(__dirname, "notifications.json");
 
-// Get all notifications
+// Ensure notifications.json exists
+if (!fs.existsSync(NOTIF_FILE)) {
+  fs.writeFileSync(NOTIF_FILE, "[]");
+}
+
+// GET all notifications
 app.get("/notifications", (req, res) => {
-  const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
-  res.json(data);
+  try {
+    const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to read notifications" });
+  }
 });
 
-// Add new notification
+// POST new notification
 app.post("/notifications", (req, res) => {
-  const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
-  const newNotif = { id: Date.now(), ...req.body };
-  data.push(newNotif);
-  fs.writeFileSync(NOTIF_FILE, JSON.stringify(data, null, 2));
-  res.json(newNotif);
+  try {
+    const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
+    const newNotif = { id: Date.now(), ...req.body };
+    data.push(newNotif);
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data, null, 2));
+    res.json(newNotif);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add notification" });
+  }
 });
 
-app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+// Use dynamic port for Render deployment
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
