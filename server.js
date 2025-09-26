@@ -14,6 +14,9 @@ if (!fs.existsSync(NOTIF_FILE)) {
   fs.writeFileSync(NOTIF_FILE, "[]");
 }
 
+// SSE clients array
+let clients = [];
+
 // GET all notifications
 app.get("/notifications", (req, res) => {
   try {
@@ -31,10 +34,29 @@ app.post("/notifications", (req, res) => {
     const newNotif = { id: Date.now(), ...req.body };
     data.push(newNotif);
     fs.writeFileSync(NOTIF_FILE, JSON.stringify(data, null, 2));
+
+    // Send new notification to all SSE clients
+    clients.forEach(client => {
+      client.write(`data: ${JSON.stringify(newNotif)}\n\n`);
+    });
+
     res.json(newNotif);
   } catch (err) {
     res.status(500).json({ error: "Failed to add notification" });
   }
+});
+
+// SSE endpoint for real-time notifications
+app.get("/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.flushHeaders();
+
+  clients.push(res);
+
+  req.on("close", () => {
+    clients = clients.filter(c => c !== res);
+  });
 });
 
 // Use dynamic port for Render deployment
