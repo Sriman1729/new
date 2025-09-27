@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Shield, BarChart, Bell, Leaf, LogOut, Edit, Trash2, PlusCircle, User, X } from 'lucide-react';
+import { Shield, BarChart, Bell, Leaf, LogOut, Edit, Trash2, PlusCircle, User, X, Menu } from 'lucide-react'; // Added Menu icon
 import clsx from 'clsx';
 
 // --- FAKE DATA (To simulate parts of the dashboard that still use local state) ---
@@ -21,6 +21,7 @@ const initialSeedData = [
 // --- Main Admin Dashboard Component ---
 export default function AdminDashboard() {
   const [activeView, setActiveView] = useState('msp'); // 'msp', 'notifications', 'seeds', 'profile'
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // New state for mobile menu
   const adminUsername = "admin_user"; // Placeholder username
   const navigate = useNavigate(); // Get the navigation function from the router
 
@@ -29,6 +30,22 @@ export default function AdminDashboard() {
     sessionStorage.removeItem('isAdminAuthenticated');
     navigate('/');
   };
+
+  const NavItem = ({ view, icon: Icon, label }) => (
+    <button
+      onClick={() => {
+        setActiveView(view);
+        setIsMobileMenuOpen(false); // Close menu on selection
+      }}
+      className={clsx(
+        "flex items-center w-full px-4 py-3 text-left text-gray-200 hover:bg-gray-700 rounded-lg transition-colors duration-200",
+        { "bg-gray-700": activeView === view }
+      )}
+    >
+      <Icon className="mr-3" size={20} />
+      <span>{label}</span>
+    </button>
+  );
 
   const renderActiveView = () => {
     switch (activeView) {
@@ -45,21 +62,29 @@ export default function AdminDashboard() {
     }
   };
 
-  const NavItem = ({ view, icon: Icon, label }) => (
-    <button
-      onClick={() => setActiveView(view)}
-      className={clsx(
-        "flex items-center w-full px-4 py-3 text-left text-gray-200 hover:bg-gray-700 rounded-lg transition-colors duration-200",
-        { "bg-gray-700": activeView === view }
-      )}
-    >
-      <Icon className="mr-3" size={20} />
-      <span>{label}</span>
-    </button>
-  );
+  // Content title for mobile header
+  const getCurrentTitle = () => {
+    const views = {
+      'msp': 'Manage MSP',
+      'notifications': 'Notifications',
+      'seeds': 'Seed Listings',
+      'profile': 'Profile',
+    };
+    return views[activeView];
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+      {/* --- Mobile Header (Visible on small screens) --- */}
+      <header className="md:hidden fixed top-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-between items-center z-10">
+        <h1 className="text-xl font-bold">{getCurrentTitle()}</h1>
+        <button onClick={() => setIsMobileMenuOpen(true)} className="p-2">
+          <Menu size={24} />
+        </button>
+      </header>
+
+      {/* --- Desktop Sidebar (Hidden on mobile) --- */}
       <aside className="w-64 bg-gray-800 text-white p-4 flex flex-col justify-between hidden md:flex">
         <div>
           <div className="flex items-center mb-8">
@@ -82,14 +107,45 @@ export default function AdminDashboard() {
         </button>
       </aside>
 
-      <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+      {/* --- Mobile Menu Overlay --- */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-gray-800 z-50 p-4 flex flex-col justify-between md:hidden">
+          <div>
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center">
+                <Shield className="text-green-400" size={32} />
+                <h1 className="text-2xl font-bold ml-2 text-white">Admin Panel</h1>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="text-white p-2">
+                <X size={24} />
+              </button>
+            </div>
+            <nav className="space-y-2">
+              <NavItem view="msp" icon={BarChart} label="Manage MSP" />
+              <NavItem view="notifications" icon={Bell} label="Notifications" />
+              <NavItem view="seeds" icon={Leaf} label="Seed Listings" />
+              <NavItem view="profile" icon={User} label="Profile" />
+            </nav>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full px-4 py-3 text-left text-gray-200 hover:bg-gray-700 rounded-lg transition-colors duration-200"
+          >
+            <LogOut className="mr-3" size={20} />
+            <span>Logout</span>
+          </button>
+        </div>
+      )}
+
+      {/* --- Main Content Area (Padding adjusted for mobile header) --- */}
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto pt-20 md:pt-8">
         {renderActiveView()}
       </main>
     </div>
   );
 }
 
-// --- Reusable UI Components ---
+// --- Reusable UI Components (No changes needed, already responsive or small) ---
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${className}`}>
     {children}
@@ -135,7 +191,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-// --- Form Components for Modals ---
+// --- Form Components for Modals (No changes needed) ---
 function MspForm({ onSave, onCancel, msp }) {
   const [formData, setFormData] = useState({
     crop: msp?.crop || '',
@@ -224,7 +280,7 @@ function SeedForm({ onSave, onCancel, seed }) {
   );
 }
 
-// --- Feature Components ---
+// --- Feature Components (Minor style adjustments for better mobile layout) ---
 function ManageMsp() {
   const [mspList, setMspList] = useState(initialMspData);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -258,7 +314,7 @@ function ManageMsp() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl sm:text-4xl font-bold">Manage MSP Prices</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold hidden md:block">Manage MSP Prices</h1>
         <Button onClick={handleAddNew}>
           <PlusCircle className="inline mr-2" size={20} /> Add New MSP
         </Button>
@@ -268,8 +324,8 @@ function ManageMsp() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b dark:border-gray-600">
-                <th className="p-4">Crop Name</th>
-                <th className="p-4">Price (₹ per Quintal)</th>
+                <th className="p-4 min-w-[150px]">Crop Name</th>
+                <th className="p-4 min-w-[150px]">Price (₹/Quintal)</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -278,9 +334,9 @@ function ManageMsp() {
                 <tr key={msp.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="p-4 font-semibold">{msp.crop}</td>
                   <td className="p-4">₹{msp.price.toLocaleString('en-IN')}</td>
-                  <td className="p-4 text-right space-x-2">
-                    <button onClick={() => handleEdit(msp)} className="text-blue-500 hover:text-blue-400 p-2"><Edit /></button>
-                    <button onClick={() => handleDelete(msp.id)} className="text-red-500 hover:text-red-400 p-2"><Trash2 /></button>
+                  <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                    <button onClick={() => handleEdit(msp)} className="text-blue-500 hover:text-blue-400 p-2"><Edit size={18} /></button>
+                    <button onClick={() => handleDelete(msp.id)} className="text-red-500 hover:text-red-400 p-2"><Trash2 size={18} /></button>
                   </td>
                 </tr>
               ))}
@@ -412,7 +468,7 @@ function ManageNotifications() {
 
   return (
     <div>
-      <h1 className="text-3xl sm:text-4xl font-bold mb-6">Publish Notifications</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-6 hidden md:block">Publish Notifications</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Create new notification */}
         <Card>
@@ -515,7 +571,7 @@ function ManageSeeds() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl sm:text-4xl font-bold">Manage Seed Listings</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold hidden md:block">Manage Seed Listings</h1>
         <Button onClick={handleAddNew}>
           <PlusCircle className="inline mr-2" /> Add New Listing
         </Button>
@@ -525,10 +581,10 @@ function ManageSeeds() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b dark:border-gray-600">
-                <th className="p-4">Crop</th>
-                <th className="p-4">Variety</th>
-                <th className="p-4">Certification</th>
-                <th className="p-4">Vendor</th>
+                <th className="p-4 min-w-[100px]">Crop</th>
+                <th className="p-4 min-w-[100px]">Variety</th>
+                <th className="p-4 min-w-[100px]">Certification</th>
+                <th className="p-4 min-w-[100px]">Vendor</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -539,9 +595,9 @@ function ManageSeeds() {
                   <td className="p-4">{seed.variety}</td>
                   <td className="p-4">{seed.certification}</td>
                   <td className="p-4">{seed.vendor}</td>
-                  <td className="p-4 text-right space-x-2">
-                    <button onClick={() => handleEdit(seed)} className="text-blue-500 hover:text-blue-400 p-2"><Edit /></button>
-                    <button onClick={() => handleDelete(seed.id)} className="text-red-500 hover:text-red-400 p-2"><Trash2 /></button>
+                  <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                    <button onClick={() => handleEdit(seed)} className="text-blue-500 hover:text-blue-400 p-2"><Edit size={18} /></button>
+                    <button onClick={() => handleDelete(seed.id)} className="text-red-500 hover:text-red-400 p-2"><Trash2 size={18} /></button>
                   </td>
                 </tr>
               ))}
@@ -583,7 +639,7 @@ function ProfilePage({ username, onLogout }) {
 
   return (
     <div>
-      <h1 className="text-3xl sm:text-4xl font-bold mb-6">Admin Profile</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold mb-6 hidden md:block">Admin Profile</h1>
       <Card className="max-w-md">
         <CardTitle>Change Password</CardTitle>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -602,7 +658,7 @@ function ProfilePage({ username, onLogout }) {
             <label className="block mb-1 font-semibold">Confirm New Password</label>
             <Input type="password" name="confirmPass" value={passwords.confirmPass} onChange={handleChange} placeholder="••••••••" />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button type="submit">Update Password</Button>
             <Button onClick={onLogout} className="bg-red-600 hover:bg-red-700">Logout</Button>
           </div>
