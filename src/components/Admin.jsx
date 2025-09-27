@@ -300,115 +300,139 @@ function ManageMsp() {
 }
 
 function ManageNotifications() {
-  // We now use axios to fetch/post/delete notifications at http://localhost:5000/notifications
-  const API_BASE = 'https://new-gsp1.onrender.com/notifications';
+  const API_BASE = "https://new-gsp1.onrender.com/notifications";
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: '', body: '', priority: 'Low', expiry: '' });
+  const [form, setForm] = useState({
+    title: "",
+    body: "",
+    priority: "Low",
+    expiry: "",
+  });
 
+  // Fetch notifications from backend on mount
   useEffect(() => {
     let cancelled = false;
+
     const fetchNotifications = async () => {
       setLoading(true);
       try {
         const res = await axios.get(API_BASE);
         if (!cancelled) {
-          // assume backend returns an array
-          // sort by newest first if `createdAt` or by id (if numeric timestamp)
           setNotifications(Array.isArray(res.data) ? res.data.slice().reverse() : []);
         }
       } catch (err) {
-        console.error('Failed to fetch notifications', err);
-        alert('Warning: Could not fetch notifications from server. Running with local view only.');
+        console.error("Failed to fetch notifications", err);
+        alert("Warning: Could not fetch notifications from server. Running with local view only.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
+
     fetchNotifications();
-    return () => { cancelled = true; };
+
+    // Setup SSE for real-time updates
+    const evtSource = new EventSource(`${API_BASE.replace("/notifications", "")}/stream`);
+    evtSource.onmessage = (event) => {
+      const newNotification = JSON.parse(event.data);
+      setNotifications(prev => [newNotification, ...prev]);
+    };
+
+    return () => {
+      cancelled = true;
+      evtSource.close();
+    };
   }, []);
 
+  // Handle form inputs
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Submit new notification
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.body.trim()) {
-      alert('Please fill in the title and body.');
+      alert("Please fill in the title and body.");
       return;
     }
 
     const payload = {
       title: form.title.trim(),
       body: form.body.trim(),
-      priority: form.priority || 'Low',
-      expiry: form.expiry || '',
+      priority: form.priority || "Low",
+      expiry: form.expiry || "",
       date: new Date().toISOString().slice(0, 10),
-      active: true
+      active: true,
     };
 
     try {
-      // Optimistic UI: add immediately (but backend ID may differ)
+      // Optimistic UI
       const tempId = Date.now();
       const optimistic = { ...payload, id: tempId };
       setNotifications(prev => [optimistic, ...prev]);
 
-      // POST to backend
       const res = await axios.post(API_BASE, payload);
+      const created = res.data;
 
-      // If server returns created object with ID, replace optimistic id
-      const created = res && res.data ? res.data : null;
-      if (created && created.id) {
-        setNotifications(prev => prev.map(n => n.id === tempId ? created : n));
-      } else {
-        // If backend didn't provide id, leave optimistic one (or update with server response)
-        // Optionally, you can refresh list from server here.
+      if (created?.id) {
+        setNotifications(prev => prev.map(n => (n.id === tempId ? created : n)));
       }
 
-      setForm({ title: '', body: '', priority: 'Low', expiry: '' });
-      alert('Notification added!');
+      setForm({ title: "", body: "", priority: "Low", expiry: "" });
     } catch (err) {
-      console.error('Failed to add notification', err);
-      // rollback optimistic
-      setNotifications(prev => prev.filter(n => n.date !== payload.date || n.title !== payload.title));
-      alert('Failed to add notification to server.');
+      console.error("Failed to add notification", err);
+      setNotifications(prev => prev.filter(n => n.id !== payload.id));
+      alert("Failed to add notification to server.");
     }
   };
 
+  // Delete notification
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) return;
+    if (!window.confirm("Are you sure you want to delete this notification?")) return;
 
-    // optimistic remove
     const prev = notifications;
     setNotifications(prev => prev.filter(n => n.id !== id));
 
     try {
       await axios.delete(`${API_BASE}/${id}`);
     } catch (err) {
-      console.error('Failed to delete notification', err);
-      alert('Failed to delete notification on server. Restoring locally.');
+      console.error("Failed to delete notification", err);
+      alert("Failed to delete notification on server. Restoring locally.");
       setNotifications(prev); // rollback
     }
   };
 
   const priorityColorClasses = {
-    'Low': 'border-blue-500 bg-blue-50 dark:bg-blue-900/30',
-    'Medium': 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/30',
-    'High': 'border-red-500 bg-red-50 dark:bg-red-900/30',
+    Low: "border-blue-500 bg-blue-50 dark:bg-blue-900/30",
+    Medium: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/30",
+    High: "border-red-500 bg-red-50 dark:bg-red-900/30",
   };
 
   return (
     <div>
       <h1 className="text-3xl sm:text-4xl font-bold mb-6">Publish Notifications</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Create new notification */}
         <Card>
           <CardTitle>Create New Notification</CardTitle>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input name="title" value={form.title} onChange={handleInputChange} placeholder="Notification Title" />
-            <textarea name="body" value={form.body} onChange={handleInputChange} placeholder="Notification Body..." rows="4" className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800 dark:text-gray-200"></textarea>
-            <select name="priority" value={form.priority} onChange={handleInputChange} className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800 dark:text-gray-200">
+            <textarea
+              name="body"
+              value={form.body}
+              onChange={handleInputChange}
+              placeholder="Notification Body..."
+              rows="4"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800 dark:text-gray-200"
+            ></textarea>
+            <select
+              name="priority"
+              value={form.priority}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800 dark:text-gray-200"
+            >
               <option>Low</option>
               <option>Medium</option>
               <option>High</option>
@@ -420,30 +444,43 @@ function ManageNotifications() {
           </form>
         </Card>
 
+        {/* Active notifications */}
         <Card>
           <CardTitle>Active Notifications</CardTitle>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
             {loading && <p>Loading notifications...</p>}
-            {!loading && notifications.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">No notifications found.</p>}
-            {!loading && notifications.map(n => (
-              <div key={n.id} className={`p-4 border-l-4 rounded-r-lg ${priorityColorClasses[n.priority || 'Low']}`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{n.title}</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{n.body}</p>
-                    {n.expiry && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Expires on: {n.expiry}</p>}
-                    {n.date && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Published: {n.date}</p>}
+            {!loading && notifications.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No notifications found.</p>
+            )}
+            {!loading &&
+              notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className={`p-4 border-l-4 rounded-r-lg ${priorityColorClasses[n.priority || "Low"]}`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-gray-800 dark:text-gray-100">{n.title}</h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{n.body}</p>
+                      {n.expiry && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Expires on: {n.expiry}</p>}
+                      {n.date && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Published: {n.date}</p>}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(n.id)}
+                      className="text-red-500 hover:text-red-400 p-1 ml-2 flex-shrink-0"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <button onClick={() => handleDelete(n.id)} className="text-red-500 hover:text-red-400 p-1 ml-2 flex-shrink-0"><Trash2 size={16} /></button>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </Card>
       </div>
     </div>
   );
 }
+
 
 function ManageSeeds() {
   const [seedList, setSeedList] = useState(initialSeedData);
