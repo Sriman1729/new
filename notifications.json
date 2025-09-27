@@ -1,9 +1,10 @@
 [
   {
-    "id": 1,
-    "title": "Crop Alert",
-    "message": "Heavy rain expected in Andhra Pradesh tomorrow!",
-    "date": "2025-09-26",
+    "id": 1695840000000,
+    "title": "Welcome!",
+    "body": "This is your first notification.",
+    "priority": "Low",
+    "date": "2025-09-27",
     "active": true
   }
 ]
