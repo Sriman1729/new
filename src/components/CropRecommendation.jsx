@@ -8,7 +8,7 @@ import DISTRICTS from "../data/indiaDistricts";
 import { CROPS } from "../data/cropMaster"; // adjust path
 import districtCrops from "../data/districtCrops.json";
 
-const SOIL_TYPES = ["Alluvial", "Loamy", "Sandy", "Clayey", "Saline", "Red Soil", "Black Cotton", "Mixed"];
+const SOIL_TYPES = ["Alluvial", "Loamy", "Sandy", "Clayey","Red Soil"];
 
 // --- ENHANCED HELPER FUNCTIONS ---
 const getCurrentSeason = () => {
