@@ -1,9 +1,8 @@
 // src/components/Header.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Leaf, Sun, Moon, Menu, X, Globe, Sprout, Bell, Trash2 } from "lucide-react";
+import { Leaf, Sun, Moon, Menu, X, Globe, Sprout } from "lucide-react";
 import { useDarkMode } from "../context/DarkModeContext";
-import axios from "axios";
 
 // Utility to load Google Translate script once
 const loadGoogleTranslate = () => {
@@ -36,8 +35,6 @@ export default function Header() {
   const [showLang, setShowLang] = useState(false);
   const [searchLang, setSearchLang] = useState("");
   const [bannerActive, setBannerActive] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotif, setShowNotif] = useState(false);
   const location = useLocation();
 
   const navLinks = [
@@ -97,6 +94,7 @@ export default function Header() {
       if (window.google && window.google.translate) {
         window.googleTranslateElementInit();
 
+        // Restore last chosen language from cookie
         const savedLang = getCookie("googtrans")?.split("/").pop();
         if (savedLang && savedLang !== "en") {
           setTimeout(() => handleTranslate(savedLang), 600);
@@ -149,41 +147,13 @@ export default function Header() {
       setShowLang(false);
       return;
     }
-    setCookie("googtrans", `/en/${lang}`, 365);
-    setTimeout(() => window.location.reload(), 200);
-  };
 
-  // --- Notifications SSE setup ---
-  useEffect(() => {
-    const fetchInitial = async () => {
-      try {
-        const res = await axios.get("https://new-gsp1.onrender.com/notifications");
-        setNotifications(Array.isArray(res.data) ? res.data.slice().reverse() : []);
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err);
-      }
-    };
-    fetchInitial();
-
-    const eventSource = new EventSource("https://new-gsp1.onrender.com/stream");
-    eventSource.onmessage = (e) => {
-      const notif = JSON.parse(e.data);
-      setNotifications((prev) => [notif, ...prev]);
-    };
-    return () => eventSource.close();
-  }, []);
-
-  const handleDeleteNotification = async (id) => {
-    if (!window.confirm("Delete this notification?")) return;
-    const prev = [...notifications];
-    setNotifications(prev.filter((n) => n.id !== id));
-    try {
-      await axios.delete(`https://new-gsp1.onrender.com/notifications/${id}`);
-    } catch (err) {
-      console.error(err);
-      setNotifications(prev);
-      alert("Failed to delete notification on server.");
-    }
+    // fallback
+    const cookieVal = `/en/${lang}`;
+    setCookie("googtrans", cookieVal, 365);
+    setTimeout(() => {
+      window.location.reload();
+    }, 200);
   };
 
   return (
@@ -286,56 +256,6 @@ export default function Header() {
                   </div>
                 )}
               </div>
-
-              {/* Notification Bell */}
-              {/* Notification Bell */}
-<div className="relative">
-  <button
-    onClick={() => setShowNotif((s) => !s)}
-    className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors relative"
-    aria-label="Notifications"
-  >
-    <Bell className="w-5 h-5 text-green-600" />
-    {notifications.length > 0 && (
-      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-        {notifications.length}
-      </span>
-    )}
-  </button>
-
-  {showNotif && (
-    <div className="absolute right-0 mt-2 w-80 bg-gray-50 dark:bg-gray-900 rounded-xl shadow-lg z-50 border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
-      {notifications.length === 0 && (
-        <div className="p-4 text-sm text-gray-500 dark:text-gray-400">
-          No notifications
-        </div>
-      )}
-      {notifications.map((notif) => (
-        <div
-          key={notif.id}
-          className="flex justify-between items-start px-4 py-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-        >
-          <div className="flex flex-col">
-            <span className="text-sm">{notif.message}</span>
-            {notif.createdAt && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {new Date(notif.createdAt).toLocaleString()}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={() => handleDeleteNotification(notif.id)}
-            className="ml-2 text-red-500 hover:text-red-700 transition"
-            title="Delete"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-
 
               {/* Theme Toggle */}
               <button
