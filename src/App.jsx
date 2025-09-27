@@ -12,14 +12,15 @@ import PlantingCalendar from "./components/PlantingCalendar";
 import Resources from "./components/Resources";
 import Profile from "./components/Profile";
 import MarketInsights from "./components/MarketInsights";
-import FertilizerCalculator from "./components/FertilizerCalculator"; 
-import PestAlerts from "./components/PestAlerts"; 
-import Admin from "./components/Admin"; 
+import FertilizerCalculator from "./components/FertilizerCalculator";
+import PestAlerts from "./components/PestAlerts";
+import Admin from "./components/Admin";
 import LoginPage from "./components/LoginPage"; // ✅ Login page
 import ProtectedRoute from "./components/ProtectedRoute"; // ✅ Protected route
+import NotificationPanel from "./components/NotificationPanel"; // ✅ Notifications
 
 import { DarkModeProvider } from "./context/DarkModeContext";
-import PageTransition from "./components/PageTransition"; 
+import PageTransition from "./components/PageTransition";
 
 function NotFound() {
   return (
@@ -166,6 +167,16 @@ export default function App() {
                 element={
                   <PageTransition type="fade">
                     <PestAlerts />
+                  </PageTransition>
+                }
+              />
+
+              {/* ✅ Notifications page */}
+              <Route
+                path="/notifications"
+                element={
+                  <PageTransition type="fade">
+                    <NotificationPanel />
                   </PageTransition>
                 }
               />
