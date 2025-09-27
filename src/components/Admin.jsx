@@ -301,7 +301,7 @@ function ManageMsp() {
 
 function ManageNotifications() {
   // We now use axios to fetch/post/delete notifications at http://localhost:5000/notifications
-  const API_BASE = 'http://localhost:5000/notifications';
+  const API_BASE = 'https://new-gsp1.onrender.com/notifications';
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
