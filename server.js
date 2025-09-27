@@ -17,20 +17,27 @@ if (!fs.existsSync(NOTIF_FILE)) {
 // SSE clients array
 let clients = [];
 
+// Utility to safely read notifications
+function readNotifications() {
+  try {
+    return JSON.parse(fs.readFileSync(NOTIF_FILE, "utf-8"));
+  } catch (err) {
+    console.error("Failed to read notifications, resetting file:", err);
+    fs.writeFileSync(NOTIF_FILE, "[]");
+    return [];
+  }
+}
+
 // GET all notifications
 app.get("/notifications", (req, res) => {
-  try {
-    const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to read notifications" });
-  }
+  const data = readNotifications();
+  res.json(data);
 });
 
 // POST new notification
 app.post("/notifications", (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(NOTIF_FILE));
+    const data = readNotifications();
     const newNotif = { id: Date.now(), ...req.body };
     data.push(newNotif);
     fs.writeFileSync(NOTIF_FILE, JSON.stringify(data, null, 2));
@@ -42,6 +49,7 @@ app.post("/notifications", (req, res) => {
 
     res.json(newNotif);
   } catch (err) {
+    console.error("Failed to add notification:", err);
     res.status(500).json({ error: "Failed to add notification" });
   }
 });
@@ -50,15 +58,29 @@ app.post("/notifications", (req, res) => {
 app.get("/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  // Push response object into clients
   clients.push(res);
 
+  // Send keep-alive comment every 15s
+  const keepAlive = setInterval(() => {
+    res.write(": keep-alive\n\n");
+  }, 15000);
+
+  // Cleanup when client disconnects
   req.on("close", () => {
+    clearInterval(keepAlive);
     clients = clients.filter(c => c !== res);
   });
 });
 
+// Root endpoint (optional for health check)
+app.get("/", (req, res) => {
+  res.send("✅ Notification Server is running!");
+});
+
 // Use dynamic port for Render deployment
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
